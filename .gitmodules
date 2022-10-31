@@ -1,0 +1,3 @@
+[submodule "urg3d_library"]
+	path = urg3d_library
+	url = https://github.com/UrgNetwork/urg3d_library
