@@ -1,0 +1,1 @@
+// Copyright 2022 HOKUYO AUTOMATIC CO., LTD.
