@@ -160,7 +160,7 @@ TEST(YVT_30LX, normal_scan) {
     EXPECT_EQ((int)ep_scan.size(), 0);
     EXPECT_EQ((int)ep_diag.size(), 0);
     
-    rclcpp::shutdown();
+    
 }
 
 int main(int argc, char ** argv)
