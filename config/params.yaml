@@ -2,7 +2,7 @@ urg3d_node2:
   ros__parameters:
     ip_address: '192.168.0.10'
     ip_port: 10940
-    frame_id : 'laser'
+    frame_id : 'hokuyo3d'
     range_min: 0.0
     interlace_h: 1
     interlace_v: 1
