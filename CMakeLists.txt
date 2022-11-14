@@ -47,7 +47,22 @@ rclcpp_components_register_node(urg3d_node2
   EXECUTABLE urg3d_node2_node)
 target_link_libraries(urg3d_node2 urg3d_c)
 
-#add_executable(publisher src/)
+install(TARGETS
+  urg3d_node2 urg3d_c
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY launch config
+  DESTINATION share/${PROJECT_NAME}
+)
+
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest)
+  ament_add_gtest(urg3d_node2_test src/urg3d_node2.cpp test/urg3d_node2_test.cpp TIMEOUT 200)
+  ament_target_dependencies(urg3d_node2_test rclcpp rclcpp_components rclcpp_lifecycle lifecycle_msgs sensor_msgs diagnostic_updater laser_proc)
+  target_link_libraries(urg3d_node2_test urg3d_c)
+endif()
 
 #if(BUILD_TESTING)
 #  find_package(ament_lint_auto REQUIRED)
