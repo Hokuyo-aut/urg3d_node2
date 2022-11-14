@@ -17,7 +17,7 @@
 namespace urg3d_node2
 {
 
-Urg3dNode2::UrgNode2(const rclcpp::NodeOptions & node_options)
+Urg3dNode2::Urg3dNode2(const rclcpp::NodeOptions & node_options)
 : rclcpp_lifecycle::LifecycleNode("urg3d_node2", node_options),
   error_count_(0),
   is_connected_(false),
@@ -58,145 +58,147 @@ Urg3dNode2::~Urg3dNode2()
 }
 
 // onConfigure
-UrgNode2::CallbackReturn UrgNode2::on_configure(const rclcpp_lifecycle::State & state)
+Urg3dNode2::CallbackReturn Urg3dNode2::on_configure(const rclcpp_lifecycle::State & state)
 {
     return CallbackReturn::SUCCESS;
 }
 
 // onActivate
-UrgNode2::CallbackReturn UrgNode2::on_activate(const rclcpp_lifecycle::State & state)
+Urg3dNode2::CallbackReturn Urg3dNode2::on_activate(const rclcpp_lifecycle::State & state)
 {
     return CallbackReturn::SUCCESS;
 }
 
 // onDeactivate
-UrgNode2::CallbackReturn UrgNode2::on_deactivate(const rclcpp_lifecycle::State & state)
+Urg3dNode2::CallbackReturn Urg3dNode2::on_deactivate(const rclcpp_lifecycle::State & state)
 {
     return CallbackReturn::SUCCESS;
 }
 
 // onCleanup
-UrgNode2::CallbackReturn UrgNode2::on_cleanup(const rclcpp_lifecycle::State & state)
+Urg3dNode2::CallbackReturn Urg3dNode2::on_cleanup(const rclcpp_lifecycle::State & state)
 {
     return CallbackReturn::SUCCESS;
 }
 
 // onShutdown
-UrgNode2::CallbackReturn UrgNode2::on_shutdown(const rclcpp_lifecycle::State & state)
+Urg3dNode2::CallbackReturn Urg3dNode2::on_shutdown(const rclcpp_lifecycle::State & state)
 {
     return CallbackReturn::SUCCESS;
 }
 
 // onError
-UrgNode2::CallbackReturn UrgNode2::on_error(const rclcpp_lifecycle::State & state)
+Urg3dNode2::CallbackReturn Urg3dNode2::on_error(const rclcpp_lifecycle::State & state)
 {
     return CallbackReturn::SUCCESS;
 }
 
 // 初期化
-void UrgNode2::initialize()
+void Urg3dNode2::initialize()
 {
-    return true;
+    
 }
 
 // Lidarとの接続処理
-bool UrgNode2::connect()
+bool Urg3dNode2::connect()
 {
     return true;
 }
 
 // スキャン設定
-void UrgNode2::set_scan_parameter()
+void Urg3dNode2::set_scan_parameter()
 {
     
 }
 
 // Lidarとの切断処理
-void UrgNode2::disconnect()
+void Urg3dNode2::disconnect()
 {
     
 }
 
 // Lidarとの再接続処理
-void UrgNode2::reconnect()
+void Urg3dNode2::reconnect()
 {
     
 }
 
 // scanスレッド
-void UrgNode2::scan_thread()
+void Urg3dNode2::scan_thread()
 {
     
 }
 
 // スキャントピック作成(PointCloud型)
-bool UrgNode2::create_scan_message(sensor_msgs::PointCloud & msg)
+bool Urg3dNode2::create_scan_message(sensor_msgs::msg::PointCloud & msg)
 {
     return true;
 }
 
 // スキャントピック作成(PointCloud2型)
-bool create_scan_message2(sensor_msgs::PointCloud2 & msg)
+bool create_scan_message2(sensor_msgs::msg::PointCloud2 & msg)
 {
     return true;
 }
 
 // システムレイテンシの計測
-void UrgNode2::calibrate_system_latency(size_t num_measurements)
+void Urg3dNode2::calibrate_system_latency(size_t num_measurements)
 {
     
 }
 
 // ROS時刻とLiDAR時刻の差の計算
-rclcpp::Duration UrgNode2::get_native_clock_offset(size_t num_measurements)
+rclcpp::Duration Urg3dNode2::get_native_clock_offset(size_t num_measurements)
 {
-    return rclcpp::Duration time_offsets;
+    return rclcpp::Duration::from_seconds(0);
 }
 
 // システム時刻とLiDAR時刻の差の計算
-rclcpp::Duration UrgNode2::get_time_stamp_offset(size_t num_measurements)
+rclcpp::Duration Urg3dNode2::get_time_stamp_offset(size_t num_measurements)
 {
-    return rclcpp::Duration time_offsets;
+    return rclcpp::Duration::from_seconds(0);
 }
 
 // 指数移動平均による動的補正
-rclcpp::Time UrgNode2::get_synchronized_time(long time_stamp, rclcpp::Time system_time_stamp)
+rclcpp::Time Urg3dNode2::get_synchronized_time(long time_stamp, rclcpp::Time system_time_stamp)
 {
-    return rclcpp::Time stamp;
+    rclcpp::Clock system_clock(RCL_SYSTEM_TIME);
+    rclcpp::Time now = system_clock.now();
+    return now;
 }
 
 // 接続先LiDARが強度出力に対応しているかどうか
-bool UrgNode2::is_intensity_supported(void)
+bool Urg3dNode2::is_intensity_supported(void)
 {
     return true;
 }
 
 // 診断情報入力
-void UrgNode2::populate_diagnostics_status(diagnostic_updater::DiagnosticStatusWrapper & status)
+void Urg3dNode2::populate_diagnostics_status(diagnostic_updater::DiagnosticStatusWrapper & status)
 {
     
 }
 
 // スキャンスレッドの開始
-void UrgNode2::start_thread(void)
+void Urg3dNode2::start_thread(void)
 {
     
 }
 
 // スキャンスレッドの停止
-void UrgNode2::stop_thread(void)
+void Urg3dNode2::stop_thread(void)
 {
     
 }
 
 // Diagnosticsの開始
-void UrgNode2::start_diagnostics(void)
+void Urg3dNode2::start_diagnostics(void)
 {
     
 }
 
 // Diagnosticsの停止
-void UrgNode2::stop_diagnostics(void)
+void Urg3dNode2::stop_diagnostics(void)
 {
     
 }

@@ -177,7 +177,7 @@ private:
    * @retval true 正常終了
    * @retval false 取得失敗
    */
-  bool create_scan_message(sensor_msgs::PointCloud & msg);
+  bool create_scan_message(sensor_msgs::msg::PointCloud & msg);
   
   /**
    * @brief スキャントピック作成(PointCloud2型)
@@ -186,7 +186,7 @@ private:
    * @retval true 正常終了
    * @retval false 取得失敗
    */
-  bool create_scan_message2(sensor_msgs::PointCloud2 & msg);
+  bool create_scan_message2(sensor_msgs::msg::PointCloud2 & msg);
   
   /**
    * @brief システムレイテンシの計算
@@ -259,8 +259,8 @@ private:
   void stop_diagnostics(void);
   
   /** スキャンデータのpublisher */
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::PointCloud>> scan_pub_1;
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::PointCloud2>> scan_pub_2;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud>> scan_pub_1;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>> scan_pub_2;
   
   /** Diagnositcs Updater */
   std::unique_ptr<diagnostic_updater::Updater> diagnostic_updater_;
