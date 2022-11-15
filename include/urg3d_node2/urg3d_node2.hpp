@@ -274,6 +274,10 @@ private:
   
   /** LiDAR管理構造体 */
   urg3d_t urg_;
+  /** LiDARヘッダ構造体 */
+  urg3d_vssp_header_t header_;
+  /** LiDARバージョン構造体 */
+  urg3d_sensor_version_t version_;
   
   /** パラメータ"ip_address" : 接続先IPアドレス */
   std::string ip_address_;
@@ -308,16 +312,17 @@ private:
   /** パラメータ"time_offset" : ユーザレイテンシ[sec] */
   double time_offset_;
   
-  /** デバイス状態 : urg_sensor_status()の値を格納 */
-  std::string device_status_;
-  /** センサ状態 : urg_sensor_state()の値を格納 */
-  std::string sensor_status_;
-  /** 製品名 : urg_sensor_product_type()の値を格納 */
+  /** ベンダ名 */
+  std::string vendor_name_;
+  /** 製品名 */
   std::string product_name_;
-  /** ファームウェアバージョン : urg_sensor_firmware_version()の値を格納 */
-  std::string firmware_version_;
-  /** デバイスID : urg_sensor_serial_id()の値を格納 */
+  /** デバイスID */
   std::string device_id_;
+  /** ファームウェアバージョン */
+  std::string firmware_version_;
+  /** プロトコル名 */
+  std::string protocol_name_;
+
   /** スキャン時間(sec) : urg_scan_usec()の値(usec)をsecに変換したものを格納 */
   double scan_period_;
   

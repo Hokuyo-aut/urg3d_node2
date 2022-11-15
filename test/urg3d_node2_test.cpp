@@ -67,7 +67,7 @@ void scan_wait(
 }
 
 TEST(YVT_30LX, normal_scan) {
-/*
+
     // initialize
     hokuyo_cloud = sensor_msgs::msg::PointCloud();
     hokuyo_cloud2 = sensor_msgs::msg::PointCloud2();
@@ -93,24 +93,24 @@ TEST(YVT_30LX, normal_scan) {
     // subscriber test node setup
     auto sub_node1 = rclcpp::Node::make_shared("test_subscription");
     auto subscriber1 = sub_node1->create_subscription<sensor_msgs::msg::PointCloud>(
-        "scan", 10, 
+        "hokuyo_cloud", 10, 
         scan_callback);
     auto sub_node2 = rclcpp::Node::make_shared("test_subscription");
     auto subscriber2 = sub_node2->create_subscription<sensor_msgs::msg::PointCloud2>(
-        "scan", 10, 
+        "hokuyo_cloud2", 10, 
         scan_callback);
     
     // publisher test
-    std::vector<rclcpp::TopicEndpointInfo> ep_scan = node->get_publishers_info_by_topic("scan");
+    std::vector<rclcpp::TopicEndpointInfo> ep_scan = node->get_publishers_info_by_topic("hokuyo_cloud2");
     std::vector<rclcpp::TopicEndpointInfo> ep_diag = node->get_publishers_info_by_topic("diagnostics");
     EXPECT_EQ((int)ep_scan.size(), 0);
     EXPECT_EQ((int)ep_diag.size(), 0);
-    
+  
     // urg3d_node2 transition (Uncondigured -> Inactive)
     node->configure();
     
     EXPECT_EQ(node->get_current_state().label(), "inactive");
-    
+ /*   
     // publisher test
     ep_scan = node->get_publishers_info_by_topic("scan");
     ep_diag = node->get_publishers_info_by_topic("diagnostics");

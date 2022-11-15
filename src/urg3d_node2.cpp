@@ -220,6 +220,43 @@ void Urg3dNode2::initialize()
 // Lidarとの接続処理
 bool Urg3dNode2::connect()
 {
+    int result = urg3d_open(&urg_, ip_address_.c_str(), ip_port_);
+    if(result < 0){
+        RCLCPP_ERROR(get_logger(), "Could not open network Hokuyo 3D LiDAR\n%s:%d\n%s",
+        ip_address_.c_str(), ip_port_, &urg_.last_errno);
+
+      return false;
+    }
+
+    is_connected_ = true;
+
+    // タイムアウト指定(2000ms)
+    urg3d_high_set_blocking_timeout_ms(&urg_, 2000);
+
+    // バージョン情報取得
+    result = urg3d_high_blocking_get_sensor_version(&urg_, &version_);
+    if(result < 0){
+        RCLCPP_ERROR(get_logger(), "Could not get version");
+
+        return false;
+    }
+
+    // LiDAR情報格納
+    vendor_name_ = version_.vendor;
+    product_name_ = version_.product;
+    device_id_ = version_.serial;
+    firmware_version_ = version_.firmware;
+    protocol_name_ = version_.protocol;
+
+    std::stringstream ss;
+    ss << "Connected to a newtork";
+    ss << "scan. Hardware ID: " << device_id_;
+    //ss << ", version:" << vendor_name_ << "," << product_name_ << "," << device_id_ << "," << firmware_version_ << "," << protocol_name_ << ",";
+    RCLCPP_INFO(get_logger(), "%s", ss.str().c_str());
+
+    // 計測タイプ設定
+    //!!!
+
     return true;
 }
 
