@@ -269,13 +269,18 @@ void Urg3dNode2::set_scan_parameter()
 // Lidarとの切断処理
 void Urg3dNode2::disconnect()
 {
-    
+    if(is_connected_){
+        urg3d_close(&urg_);
+        is_connected_ = false;
+    }
 }
 
 // Lidarとの再接続処理
 void Urg3dNode2::reconnect()
 {
-    
+    disconnect();
+
+    connect();
 }
 
 // scanスレッド
@@ -337,13 +342,17 @@ void Urg3dNode2::populate_diagnostics_status(diagnostic_updater::DiagnosticStatu
 // スキャンスレッドの開始
 void Urg3dNode2::start_thread(void)
 {
-    
+    close_thread_ = false;
+    scan_thread_ = std::thread(std::bind(&Urg3dNode2::scan_thread, this));
 }
 
 // スキャンスレッドの停止
 void Urg3dNode2::stop_thread(void)
 {
-    
+    close_thread_ = true;
+    if(scan_thread_.joinable()){
+        scan_thread_.join();
+    }
 }
 
 // Diagnosticsの開始
