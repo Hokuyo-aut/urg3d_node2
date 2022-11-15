@@ -173,7 +173,7 @@ Urg3dNode2::CallbackReturn Urg3dNode2::on_error(const rclcpp_lifecycle::State & 
     // publisherの解放
     scan_pub_1.reset();
     scan_pub_2.reset();
-    
+
     // 切断
     disconnect();
 
@@ -183,7 +183,38 @@ Urg3dNode2::CallbackReturn Urg3dNode2::on_error(const rclcpp_lifecycle::State & 
 // 初期化
 void Urg3dNode2::initialize()
 {
-    
+    // パラメータ取得
+    ip_address_ = get_parameter("ip_address").as_string();
+    ip_port_ = get_parameter("ip_port").as_int();
+    frame_id_ = get_parameter("frame_id").as_string();
+    range_min_ = get_parameter("range_min").as_double();
+    interlace_h_= get_parameter("interlace_h").as_int();
+    interlace_v_ = get_parameter("interlace_v").as_int();
+    output_cycle_ = get_parameter("output_cycle").as_string();
+    publish_intensity_ = get_parameter("publish_intensity").as_bool();
+    publish_auxiliary_ = get_parameter("publish_auxiliary").as_bool();
+    calibrate_time_ = get_parameter("calibrate_time").as_bool();
+    synchronize_time_ = get_parameter("synchronize_time").as_bool();
+    error_limit_ = get_parameter("error_limit").as_int();
+    error_reset_period_ = get_parameter("error_reset_period").as_double();
+    diagnostics_tolerance_ = get_parameter("diagnostics_tolerance").as_double();
+    diagnostics_window_time_ = get_parameter("diagnostics_window_time").as_double();
+    time_offset_ = get_parameter("time_offset").as_double();
+
+    // 内部変数初期化
+    is_connected_ = false;
+    is_measurement_started_ = false;
+    is_stable_ = false;
+    user_latency_ = rclcpp::Duration::from_seconds(time_offset_);
+
+    // メッセージヘッダのframe_id設定
+    header_frame_id_ =
+      (frame_id_.find_first_not_of('/') == std::string::npos) ? "" : frame_id_.substr(frame_id_.find_first_not_of('/'));
+      
+    hardware_clock_ = 0.0;
+    last_hardware_time_stamp_ = 0;
+    hardware_clock_adj_ = 0;
+    adj_count_ = 0;
 }
 
 // Lidarとの接続処理
