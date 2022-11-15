@@ -286,7 +286,103 @@ void Urg3dNode2::reconnect()
 // scanスレッド
 void Urg3dNode2::scan_thread()
 {
+    reconnect_count_ = 0;
+
+    while(!close_thread_){
+        if(!is_connected_){
+            if(!connect()){
+                rclcpp::sleep_for(500ms);
+                continue;
+            }
+        }
+
+        // Inactive状態判定
+        rclcpp_lifecycle::State state = get_current_state();
+        if(state.label() == "inactive"){
+            // 再接続処理
+            reconnect();
+            reconnect_count_++;
+
+            rclcpp::sleep_for(100ms);
+            continue;
+        }
+
+        // スキャン設定
+        set_scan_parameter();
+
+        // 調整モード
+        if (calibrate_time_) {
+            calibrate_system_latency(URG_NODE2_CALIBRATION_MEASUREMENT_TIME);
+        }
+
+        // LiDAR状態更新
+
+        // 計測開始
+        int ret = urg3d_high_start_data(&urg_, URG3D_DISTANCE_INTENSITY);
+        if(ret < 0){
+            RCLCPP_WARN(get_logger(), "Could not start Hokuyo measurement\n");
     
+            // 再接続処理
+            reconnect();
+            reconnect_count_++;
+    
+            continue;
+        }
+
+        is_measurement_started_ = true;
+        error_count_ = 0;
+        
+        rclcpp::Clock system_clock(RCL_SYSTEM_TIME);
+        rclcpp::Time prev_time = system_clock.now();
+
+        while(!close_thread_){
+            // Inactive状態判定
+            rclcpp_lifecycle::State state = get_current_state();
+            if (state.label() == "inactive") {
+                urg3d_high_stop_data(&urg_, URG3D_DISTANCE_INTENSITY);
+                is_measurement_started_ = false;
+                break;
+            }
+
+            // 計測データ処理
+            sensor_msgs::msg::PointCloud2 msg;
+            if(create_scan_message2(msg)){
+                scan_pub_2->publish(msg);
+                if(scan_freq_){
+                    scan_freq_->tick();
+                }
+            }
+            else{
+                RCLCPP_WARN(get_logger(), "Could not get scan.");
+                error_count_++;
+                total_error_count_++;
+                //device_status_ = urg_sensor_status(&urg_);
+                //sensor_status_ = urg_sensor_state(&urg_);
+                //is_stable_ = urg_is_stable(&urg_);
+            }
+
+            // エラーカウント判定
+            if(error_count_ > error_limit_){
+                RCLCPP_ERROR(get_logger(), "Error count exceeded limit, reconnecting.");
+                // 再接続処理
+                reconnect();
+                reconnect_count_++;
+                break;
+            }
+            else{
+                // エラーカウントのリセット
+                rclcpp::Time current_time = system_clock.now();
+                rclcpp::Duration period = current_time - prev_time;
+                if (period.seconds() >= error_reset_period_) {
+                    prev_time = current_time;
+                    error_count_ = 0;
+                }
+            }
+        }
+    }
+
+    // 切断処理
+    disconnect();
 }
 
 // スキャントピック作成(PointCloud型)
@@ -296,7 +392,7 @@ bool Urg3dNode2::create_scan_message(sensor_msgs::msg::PointCloud & msg)
 }
 
 // スキャントピック作成(PointCloud2型)
-bool create_scan_message2(sensor_msgs::msg::PointCloud2 & msg)
+bool Urg3dNode2::create_scan_message2(sensor_msgs::msg::PointCloud2 & msg)
 {
     return true;
 }
