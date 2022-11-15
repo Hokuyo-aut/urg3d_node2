@@ -60,36 +60,123 @@ Urg3dNode2::~Urg3dNode2()
 // onConfigure
 Urg3dNode2::CallbackReturn Urg3dNode2::on_configure(const rclcpp_lifecycle::State & state)
 {
+    RCLCPP_DEBUG(get_logger(), "transition Configuring from %s", state.label().c_str());
+
+    initialize();
+
+    if(!connect()) {
+        return CallbackReturn::FAILURE;
+    }
+
+    // Publisher設定
+    scan_pub_1 = create_publisher<sensor_msgs::msg::PointCloud>("hokuyo_cloud", rclcpp::QoS(20));
+    scan_pub_2 = create_publisher<sensor_msgs::msg::PointCloud2>("hokuyo_cloud2", rclcpp::QoS(20));
+
+    // スレッド起動
+    start_thread();
+
     return CallbackReturn::SUCCESS;
 }
 
 // onActivate
 Urg3dNode2::CallbackReturn Urg3dNode2::on_activate(const rclcpp_lifecycle::State & state)
 {
+    RCLCPP_DEBUG(get_logger(), "transition Activating from %s", state.label().c_str());
+
+    if(!is_connected_) {
+        return CallbackReturn::ERROR;
+    }
+    else{
+        // publisherの有効化
+        if(scan_pub_1){
+            scan_pub_1->on_activate();
+        }
+        if(scan_pub_2){
+            scan_pub_2->on_activate();
+        }
+
+        // Diagnostics開始
+        start_diagnostics();
+
+        // 累計エラーカウントの初期化
+        total_error_count_ = 0;
+    }
+
     return CallbackReturn::SUCCESS;
 }
 
 // onDeactivate
 Urg3dNode2::CallbackReturn Urg3dNode2::on_deactivate(const rclcpp_lifecycle::State & state)
 {
+    RCLCPP_DEBUG(get_logger(), "transition Deactivating from %s", state.label().c_str());
+
+    // Diagnostics停止
+    stop_diagnostics();
+
+    if(!is_connected_){
+        return CallbackReturn::ERROR;
+    }
+
     return CallbackReturn::SUCCESS;
 }
 
 // onCleanup
 Urg3dNode2::CallbackReturn Urg3dNode2::on_cleanup(const rclcpp_lifecycle::State & state)
 {
+    RCLCPP_DEBUG(get_logger(), "transition CleaningUp from %s", state.label().c_str());
+
+    // スレッド停止
+    stop_thread();
+
+    // publisherの解放
+    scan_pub_1.reset();
+    scan_pub_2.reset();
+
+    // 切断
+    disconnect();
+
     return CallbackReturn::SUCCESS;
 }
 
 // onShutdown
 Urg3dNode2::CallbackReturn Urg3dNode2::on_shutdown(const rclcpp_lifecycle::State & state)
 {
+    RCLCPP_DEBUG(get_logger(), "transition Shutdown from %s", state.label().c_str());
+
+    // スレッド停止
+    stop_thread();
+
+    // Diagnostics停止
+    stop_diagnostics();
+
+    // publisherの解放
+    scan_pub_1.reset();
+    scan_pub_2.reset();
+
+    // 切断
+    disconnect();
+
     return CallbackReturn::SUCCESS;
 }
 
 // onError
 Urg3dNode2::CallbackReturn Urg3dNode2::on_error(const rclcpp_lifecycle::State & state)
 {
+    RCLCPP_DEBUG(get_logger(), "transition Error from %s", state.label().c_str());
+
+    // スレッドの停止
+    stop_thread();
+
+    // Diagnostics停止
+    stop_diagnostics();
+
+    // publisherの解放
+    scan_pub_1.reset();
+    scan_pub_2.reset();
+    
+    // 切断
+    disconnect();
+
     return CallbackReturn::SUCCESS;
 }
 

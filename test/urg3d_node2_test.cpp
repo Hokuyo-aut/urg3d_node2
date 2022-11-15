@@ -67,7 +67,7 @@ void scan_wait(
 }
 
 TEST(YVT_30LX, normal_scan) {
-    
+/*
     // initialize
     hokuyo_cloud = sensor_msgs::msg::PointCloud();
     hokuyo_cloud2 = sensor_msgs::msg::PointCloud2();
@@ -163,6 +163,35 @@ TEST(YVT_30LX, normal_scan) {
     EXPECT_EQ((int)ep_diag.size(), 0);
     
     rclcpp::shutdown();
+*/
+}
+
+TEST(YVT_30LX, intensity_scan) {
+   
+}
+
+TEST(YVT_30LX, auxiliary_scan){
+
+}
+
+TEST(YVT_30LX, intensity_auxiliary_scan){
+  
+}
+
+TEST(YVT_30LX, change_interlace_h_scan) {
+
+}
+
+TEST(YVT_30LX, change_interlace_v_scan) {
+
+}
+
+TEST(YVT_30LX, change_output_cycle_scan) {
+
+}
+
+TEST(YVT_30LX, normal_scan_param) {
+
 }
 
 int main(int argc, char ** argv)
