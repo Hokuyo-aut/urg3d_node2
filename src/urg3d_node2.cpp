@@ -286,9 +286,12 @@ void Urg3dNode2::reconnect()
 // scanスレッド
 void Urg3dNode2::scan_thread()
 {
+    RCLCPP_ERROR(get_logger(), "start thread.");
+
     reconnect_count_ = 0;
 
     while(!close_thread_){
+        /*
         if(!is_connected_){
             if(!connect()){
                 rclcpp::sleep_for(500ms);
@@ -379,6 +382,7 @@ void Urg3dNode2::scan_thread()
                 }
             }
         }
+        */
     }
 
     // 切断処理
@@ -432,7 +436,34 @@ bool Urg3dNode2::is_intensity_supported(void)
 // 診断情報入力
 void Urg3dNode2::populate_diagnostics_status(diagnostic_updater::DiagnosticStatusWrapper & status)
 {
-    
+    if(!is_connected_){
+        status.summary(diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Not Connected");
+    }
+
+    status.add("IP Address", ip_address_);
+    status.add("IP Port", ip_port_);
+
+    if (!is_measurement_started_) {
+        diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Not started: ";
+    }
+    //else if(){
+    //
+    //}
+    else{
+        status.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Streaming");
+    }
+
+    status.add("Vendor Name", vendor_name_);
+    status.add("Product Name", product_name_);
+    status.add("Firmware Version", firmware_version_);
+    status.add("Device ID", device_id_);
+    status.add("Protocol name", protocol_name_);
+    status.add("Computed Latency", system_latency_.seconds());
+    status.add("User Time Offset", user_latency_.seconds());
+    //status.add("Device Status", device_status_);
+    status.add("Scan Retrieve Error Count", error_count_);
+    status.add("Scan Retrieve Total Error Count", total_error_count_);
+    status.add("Reconnection Count", reconnect_count_);
 }
 
 // スキャンスレッドの開始
@@ -454,13 +485,40 @@ void Urg3dNode2::stop_thread(void)
 // Diagnosticsの開始
 void Urg3dNode2::start_diagnostics(void)
 {
-    
+    // Diagnostics設定
+    diagnostic_updater_.reset(new diagnostic_updater::Updater(this));
+    diagnostic_updater_->setHardwareID(device_id_);
+    diagnostic_updater_->add("Hardware Status", this, &Urg3dNode2::populate_diagnostics_status);
+
+    // Diagnosticsトピック設定
+    diagnostics_freq_ = 1.0 / scan_period_;
+    scan_freq_.reset(
+      new diagnostic_updater::HeaderlessTopicDiagnostic(
+        "Point Cloud2",
+        *diagnostic_updater_,
+        diagnostic_updater::FrequencyStatusParam(
+          &diagnostics_freq_, &diagnostics_freq_, diagnostics_tolerance_,
+          diagnostics_window_time_)));
 }
 
 // Diagnosticsの停止
 void Urg3dNode2::stop_diagnostics(void)
 {
-    
+    // Diagnostics解放
+    scan_freq_.reset();
+
+    // 暫定対応
+    // Diagnosticsが追加したパラメータの解放
+    // diagnostic_updaterを再び生成するとdeclare_parameterが呼ばれエラーになる
+    //   https://github.com/ros/diagnostics/pull/227
+    if (has_parameter("diagnostic_updater.period")) {
+        try {
+            undeclare_parameter("diagnostic_updater.period");
+        } 
+        catch (const std::runtime_error & e) {
+            RCLCPP_WARN(get_logger(), "undeclare_parameter failed: %s", e.what());
+        }
+    }
 }
 
 }

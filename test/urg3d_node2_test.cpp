@@ -110,9 +110,9 @@ TEST(YVT_30LX, normal_scan) {
     node->configure();
     
     EXPECT_EQ(node->get_current_state().label(), "inactive");
- /*   
+    
     // publisher test
-    ep_scan = node->get_publishers_info_by_topic("scan");
+    ep_scan = node->get_publishers_info_by_topic("hokuyo_cloud2");
     ep_diag = node->get_publishers_info_by_topic("diagnostics");
     EXPECT_EQ((int)ep_scan.size(), 1);
     EXPECT_EQ((int)ep_diag.size(), 0);
@@ -142,10 +142,10 @@ TEST(YVT_30LX, normal_scan) {
     
     bool flag_nan = false;
     // !!! need fix
-    //for(size_t i = 0; i < scan_msg.ranges.size(); ++i) {
-    //    if(scan_msg.ranges[i] == std::numeric_limits<float>::quiet_Nan()){
+    //for(size_t i = 0; i < hokuyo_cloud2.ranges.size(); ++i) {
+    //    if(hokuyo_cloud2.ranges[i] == std::numeric_limits<float>::quiet_Nan()){
     //        flag_nan = true;
-    //    }
+    //   }
     //}
     EXPECT_EQ(flag_nan, false);
     // !!! need fix
@@ -163,7 +163,6 @@ TEST(YVT_30LX, normal_scan) {
     EXPECT_EQ((int)ep_diag.size(), 0);
     
     rclcpp::shutdown();
-*/
 }
 
 TEST(YVT_30LX, intensity_scan) {
