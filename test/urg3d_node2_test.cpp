@@ -117,8 +117,8 @@ TEST(YVT_30LX, normal_scan) {
     EXPECT_EQ((int)ep_scan.size(), 1);
     EXPECT_EQ((int)ep_diag.size(), 0);
     
-    // scan_wait for 10sec
-    scan_wait(exe1, 10.0);
+    // scan_wait for 1sec
+    scan_wait(exe1, 1.0);
     
     EXPECT_EQ(receive_count, 0);   // no receive
     receive_count = 0;

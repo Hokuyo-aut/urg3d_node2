@@ -215,6 +215,9 @@ void Urg3dNode2::initialize()
     last_hardware_time_stamp_ = 0;
     hardware_clock_adj_ = 0;
     adj_count_ = 0;
+
+    prev_frame_ = -1;
+    prev_field_ = -1;
 }
 
 // Lidarとの接続処理
@@ -233,10 +236,20 @@ bool Urg3dNode2::connect()
     // タイムアウト指定(2000ms)
     urg3d_high_set_blocking_timeout_ms(&urg_, 2000);
 
+    // 3Dセッション初期化
+    result = urg3d_high_blocking_init(&urg_);
+    if(result < 0){
+        RCLCPP_ERROR(get_logger(), "Could not init library");
+        disconnect();
+
+        return false;
+    }
+
     // バージョン情報取得
     result = urg3d_high_blocking_get_sensor_version(&urg_, &version_);
     if(result < 0){
         RCLCPP_ERROR(get_logger(), "Could not get version");
+        disconnect();
 
         return false;
     }
@@ -253,9 +266,6 @@ bool Urg3dNode2::connect()
     ss << "scan. Hardware ID: " << device_id_;
     //ss << ", version:" << vendor_name_ << "," << product_name_ << "," << device_id_ << "," << firmware_version_ << "," << protocol_name_ << ",";
     RCLCPP_INFO(get_logger(), "%s", ss.str().c_str());
-
-    // 計測タイプ設定
-    //!!!
 
     return true;
 }
@@ -288,17 +298,18 @@ void Urg3dNode2::scan_thread()
 {
     RCLCPP_ERROR(get_logger(), "start thread.");
 
+    int result = 0;
     reconnect_count_ = 0;
 
     while(!close_thread_){
-        /*
+        
         if(!is_connected_){
             if(!connect()){
                 rclcpp::sleep_for(500ms);
                 continue;
             }
         }
-
+        
         // Inactive状態判定
         rclcpp_lifecycle::State state = get_current_state();
         if(state.label() == "inactive"){
@@ -319,6 +330,7 @@ void Urg3dNode2::scan_thread()
         }
 
         // LiDAR状態更新
+        // !!!追加を検討 
 
         // 計測開始
         int ret = urg3d_high_start_data(&urg_, URG3D_DISTANCE_INTENSITY);
@@ -348,6 +360,31 @@ void Urg3dNode2::scan_thread()
             }
 
             // 計測データ処理
+            if(urg3d_next_receive_ready(&urg_)){
+                if(urg3d_high_get_measurement_data(&urg_, &measurement_data_)){
+                    if(prev_frame_ == -1 && prev_field_ == -1){
+                        if(measurement_data_.line_number == 0){
+                            prev_frame_ = measurement_data_.frame_number;
+                            prev_field_ = measurement_data_.h_field_number;
+                        }
+                    }
+
+                    if(prev_frame_ != -1 && prev_field_ != -1){
+                        if(prev_frame_ != measurement_data_.frame_number || prev_field_ != measurement_data_.h_field_number){
+                            break;
+                        }
+
+                        // publish
+                        //if(create_scan_message2(msg)){
+                        //scan_pub_2->publish(msg);
+                        RCLCPP_DEBUG(get_logger(), "publish data.");
+                        if(scan_freq_){
+                            scan_freq_->tick();
+                        }
+                    }
+                }
+            }
+            /*
             sensor_msgs::msg::PointCloud2 msg;
             if(create_scan_message2(msg)){
                 scan_pub_2->publish(msg);
@@ -363,6 +400,7 @@ void Urg3dNode2::scan_thread()
                 //sensor_status_ = urg_sensor_state(&urg_);
                 //is_stable_ = urg_is_stable(&urg_);
             }
+            */
 
             // エラーカウント判定
             if(error_count_ > error_limit_){
@@ -382,7 +420,6 @@ void Urg3dNode2::scan_thread()
                 }
             }
         }
-        */
     }
 
     // 切断処理

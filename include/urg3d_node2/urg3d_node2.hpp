@@ -325,6 +325,13 @@ private:
 
   /** スキャン時間(sec) : urg_scan_usec()の値(usec)をsecに変換したものを格納 */
   double scan_period_;
+
+  /** 計測データ */
+  urg3d_measurement_data_t measurement_data_;
+  /** 前フレーム */
+  int prev_frame_;
+  /** 前フィールド */
+  int prev_field_;
   
   /** 計測モード [URG3D_DISTANCE or URG3D_DISTANCE_INTENSITY or URG3D_AUXILIARY] */
   urg3d_measurement_type_t measurement_type_;
