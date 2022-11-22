@@ -42,7 +42,7 @@ def generate_launch_description():
         output='screen',
     )
 
-    # urg_node2をコンポーネントノードとして起動
+    # urg3d_node2をコンポーネントノードとして起動
     load_composable_nodes = LoadComposableNodes(
         target_container='app_container',
         composable_node_descriptions=[
