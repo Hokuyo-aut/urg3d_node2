@@ -45,7 +45,7 @@ def generate_launch_description():
         package='urg3d_node2',
         executable='urg3d_node2_node',
         name=LaunchConfiguration('node_name'),
-        remappings=[('hokuyo_cloud', LaunchConfiguration('scan_topic_name'))],
+        remappings=[('hokuyo_cloud2', LaunchConfiguration('scan_topic_name'))],
         parameters=[config_params],
         namespace='',
         output='screen',
@@ -88,12 +88,12 @@ def generate_launch_description():
     # パラメータについて
     # auto_start      : 起動時自動でActive状態まで遷移 (default)true
     # node_name       : ノード名 (default)"urg3d_node2"
-    # scan_topic_name : トピック名 (default)"hokuyo_cloud"
+    # scan_topic_name : トピック名 (default)"hokuyo_cloud2"
     return LaunchDescription([
         DeclareLaunchArgument('auto_start', default_value='true'),
-        DeclareLaunchArgument('node_name', default_value='urg_node2'),
-        DeclareLaunchArgument('scan_topic_name', default_value='hokuyo_cloud'),
+        DeclareLaunchArgument('node_name', default_value='urg3d_node2'),
+        DeclareLaunchArgument('scan_topic_name', default_value='hokuyo_cloud2'),
         lifecycle_node,
-        urg_node2_node_configure_event_handler,
-        urg_node2_node_activate_event_handler,
+        urg3d_node2_node_configure_event_handler,
+        urg3d_node2_node_activate_event_handler,
     ])

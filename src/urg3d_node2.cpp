@@ -27,11 +27,11 @@ Urg3dNode2::Urg3dNode2(const rclcpp::NodeOptions & node_options)
   system_latency_(0ns),
   user_latency_(0ns)
 {
-  // urg_openŒã‚ÉLiDAR‚Ì“dŒ¹‚ªOFF‚É‚È‚Á‚½ó‘Ô‚ÅLiDAR‚Æ’ÊM‚µ‚æ‚¤‚Æ‚·‚é‚ÆSIGPIPEƒVƒOƒiƒ‹‚ª”­¶‚·‚é
-  // ROS1‚Å‚ÍROS‚Ìƒ‰ƒCƒuƒ‰ƒŠ‚Åİ’è‚³‚ê‚Ä‚¢‚½‚ªROS2‚Å‚Í–¢‘Î‰‚Ì‚½‚ßA‚±‚±‚Åİ’è‚·‚é
+  // urg_openå¾Œã«LiDARã®é›»æºãŒOFFã«ãªã£ãŸçŠ¶æ…‹ã§LiDARã¨é€šä¿¡ã—ã‚ˆã†ã¨ã™ã‚‹ã¨SIGPIPEã‚·ã‚°ãƒŠãƒ«ãŒç™ºç”Ÿã™ã‚‹
+  // ROS1ã§ã¯ROSã®ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã§è¨­å®šã•ã‚Œã¦ã„ãŸãŒROS2ã§ã¯æœªå¯¾å¿œã®ãŸã‚ã€ã“ã“ã§è¨­å®šã™ã‚‹
   std::signal(SIGPIPE, SIG_IGN);
   
-  // ƒpƒ‰ƒ[ƒ^‚Ì“o˜^
+  // ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã®ç™»éŒ²
   ip_address_ = declare_parameter<std::string>("ip_address", "");
   ip_port_ = declare_parameter<int>("ip_port", 10940);
   frame_id_ = declare_parameter<std::string>("frame_id", "hokuyo3d");
@@ -50,10 +50,10 @@ Urg3dNode2::Urg3dNode2(const rclcpp::NodeOptions & node_options)
   time_offset_ = declare_parameter<double>("time_offset", 0.0);
 }
 
-// ƒfƒXƒgƒ‰ƒNƒ^
+// ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 Urg3dNode2::~Urg3dNode2()
 {
-  // ƒXƒŒƒbƒh‚Ì’â~
+  // ã‚¹ãƒ¬ãƒƒãƒ‰ã®åœæ­¢
   stop_thread();
 }
 
@@ -68,11 +68,11 @@ Urg3dNode2::CallbackReturn Urg3dNode2::on_configure(const rclcpp_lifecycle::Stat
         return CallbackReturn::FAILURE;
     }
 
-    // Publisherİ’è
+    // Publisherè¨­å®š
     scan_pub_1 = create_publisher<sensor_msgs::msg::PointCloud>("hokuyo_cloud", rclcpp::QoS(20));
     scan_pub_2 = create_publisher<sensor_msgs::msg::PointCloud2>("hokuyo_cloud2", rclcpp::QoS(20));
 
-    // ƒXƒŒƒbƒh‹N“®
+    // ã‚¹ãƒ¬ãƒƒãƒ‰èµ·å‹•
     start_thread();
 
     return CallbackReturn::SUCCESS;
@@ -87,7 +87,7 @@ Urg3dNode2::CallbackReturn Urg3dNode2::on_activate(const rclcpp_lifecycle::State
         return CallbackReturn::ERROR;
     }
     else{
-        // publisher‚Ì—LŒø‰»
+        // publisherã®æœ‰åŠ¹åŒ–
         if(scan_pub_1){
             scan_pub_1->on_activate();
         }
@@ -95,10 +95,10 @@ Urg3dNode2::CallbackReturn Urg3dNode2::on_activate(const rclcpp_lifecycle::State
             scan_pub_2->on_activate();
         }
 
-        // DiagnosticsŠJn
+        // Diagnosticsé–‹å§‹
         start_diagnostics();
 
-        // —İŒvƒGƒ‰[ƒJƒEƒ“ƒg‚Ì‰Šú‰»
+        // ç´¯è¨ˆã‚¨ãƒ©ãƒ¼ã‚«ã‚¦ãƒ³ãƒˆã®åˆæœŸåŒ–
         total_error_count_ = 0;
     }
 
@@ -110,7 +110,7 @@ Urg3dNode2::CallbackReturn Urg3dNode2::on_deactivate(const rclcpp_lifecycle::Sta
 {
     RCLCPP_DEBUG(get_logger(), "transition Deactivating from %s", state.label().c_str());
 
-    // Diagnostics’â~
+    // Diagnosticsåœæ­¢
     stop_diagnostics();
 
     if(!is_connected_){
@@ -125,14 +125,14 @@ Urg3dNode2::CallbackReturn Urg3dNode2::on_cleanup(const rclcpp_lifecycle::State 
 {
     RCLCPP_DEBUG(get_logger(), "transition CleaningUp from %s", state.label().c_str());
 
-    // ƒXƒŒƒbƒh’â~
+    // ã‚¹ãƒ¬ãƒƒãƒ‰åœæ­¢
     stop_thread();
 
-    // publisher‚Ì‰ğ•ú
+    // publisherã®è§£æ”¾
     scan_pub_1.reset();
     scan_pub_2.reset();
 
-    // Ø’f
+    // åˆ‡æ–­
     disconnect();
 
     return CallbackReturn::SUCCESS;
@@ -143,17 +143,17 @@ Urg3dNode2::CallbackReturn Urg3dNode2::on_shutdown(const rclcpp_lifecycle::State
 {
     RCLCPP_DEBUG(get_logger(), "transition Shutdown from %s", state.label().c_str());
 
-    // ƒXƒŒƒbƒh’â~
+    // ã‚¹ãƒ¬ãƒƒãƒ‰åœæ­¢
     stop_thread();
 
-    // Diagnostics’â~
+    // Diagnosticsåœæ­¢
     stop_diagnostics();
 
-    // publisher‚Ì‰ğ•ú
+    // publisherã®è§£æ”¾
     scan_pub_1.reset();
     scan_pub_2.reset();
 
-    // Ø’f
+    // åˆ‡æ–­
     disconnect();
 
     return CallbackReturn::SUCCESS;
@@ -164,26 +164,26 @@ Urg3dNode2::CallbackReturn Urg3dNode2::on_error(const rclcpp_lifecycle::State & 
 {
     RCLCPP_DEBUG(get_logger(), "transition Error from %s", state.label().c_str());
 
-    // ƒXƒŒƒbƒh‚Ì’â~
+    // ã‚¹ãƒ¬ãƒƒãƒ‰ã®åœæ­¢
     stop_thread();
 
-    // Diagnostics’â~
+    // Diagnosticsåœæ­¢
     stop_diagnostics();
 
-    // publisher‚Ì‰ğ•ú
+    // publisherã®è§£æ”¾
     scan_pub_1.reset();
     scan_pub_2.reset();
 
-    // Ø’f
+    // åˆ‡æ–­
     disconnect();
 
     return CallbackReturn::SUCCESS;
 }
 
-// ‰Šú‰»
+// åˆæœŸåŒ–
 void Urg3dNode2::initialize()
 {
-    // ƒpƒ‰ƒ[ƒ^æ“¾
+    // ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿å–å¾—
     ip_address_ = get_parameter("ip_address").as_string();
     ip_port_ = get_parameter("ip_port").as_int();
     frame_id_ = get_parameter("frame_id").as_string();
@@ -201,13 +201,13 @@ void Urg3dNode2::initialize()
     diagnostics_window_time_ = get_parameter("diagnostics_window_time").as_double();
     time_offset_ = get_parameter("time_offset").as_double();
 
-    // “à•”•Ï”‰Šú‰»
+    // å†…éƒ¨å¤‰æ•°åˆæœŸåŒ–
     is_connected_ = false;
     is_measurement_started_ = false;
     is_stable_ = false;
     user_latency_ = rclcpp::Duration::from_seconds(time_offset_);
 
-    // ƒƒbƒZ[ƒWƒwƒbƒ_‚Ìframe_idİ’è
+    // ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãƒ˜ãƒƒãƒ€ã®frame_idè¨­å®š
     header_frame_id_ =
       (frame_id_.find_first_not_of('/') == std::string::npos) ? "" : frame_id_.substr(frame_id_.find_first_not_of('/'));
       
@@ -220,7 +220,7 @@ void Urg3dNode2::initialize()
     prev_field_ = -1;
 }
 
-// Lidar‚Æ‚ÌÚ‘±ˆ—
+// Lidarã¨ã®æ¥ç¶šå‡¦ç†
 bool Urg3dNode2::connect()
 {
     int result = urg3d_open(&urg_, ip_address_.c_str(), ip_port_);
@@ -233,10 +233,10 @@ bool Urg3dNode2::connect()
 
     is_connected_ = true;
 
-    // ƒ^ƒCƒ€ƒAƒEƒgw’è(2000ms)
+    // ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆæŒ‡å®š(2000ms)
     urg3d_high_set_blocking_timeout_ms(&urg_, 2000);
 
-    // 3DƒZƒbƒVƒ‡ƒ“‰Šú‰»
+    // 3Dã‚»ãƒƒã‚·ãƒ§ãƒ³åˆæœŸåŒ–
     result = urg3d_high_blocking_init(&urg_);
     if(result < 0){
         RCLCPP_ERROR(get_logger(), "Could not init library");
@@ -245,7 +245,7 @@ bool Urg3dNode2::connect()
         return false;
     }
 
-    // ƒo[ƒWƒ‡ƒ“î•ñæ“¾
+    // ãƒãƒ¼ã‚¸ãƒ§ãƒ³æƒ…å ±å–å¾—
     result = urg3d_high_blocking_get_sensor_version(&urg_, &version_);
     if(result < 0){
         RCLCPP_ERROR(get_logger(), "Could not get version");
@@ -254,7 +254,7 @@ bool Urg3dNode2::connect()
         return false;
     }
 
-    // LiDARî•ñŠi”[
+    // LiDARæƒ…å ±æ ¼ç´
     vendor_name_ = version_.vendor;
     product_name_ = version_.product;
     device_id_ = version_.serial;
@@ -270,13 +270,13 @@ bool Urg3dNode2::connect()
     return true;
 }
 
-// ƒXƒLƒƒƒ“İ’è
+// ã‚¹ã‚­ãƒ£ãƒ³è¨­å®š
 void Urg3dNode2::set_scan_parameter()
 {
     
 }
 
-// Lidar‚Æ‚ÌØ’fˆ—
+// Lidarã¨ã®åˆ‡æ–­å‡¦ç†
 void Urg3dNode2::disconnect()
 {
     if(is_connected_){
@@ -285,7 +285,7 @@ void Urg3dNode2::disconnect()
     }
 }
 
-// Lidar‚Æ‚ÌÄÚ‘±ˆ—
+// Lidarã¨ã®å†æ¥ç¶šå‡¦ç†
 void Urg3dNode2::reconnect()
 {
     disconnect();
@@ -293,7 +293,7 @@ void Urg3dNode2::reconnect()
     connect();
 }
 
-// scanƒXƒŒƒbƒh
+// scanã‚¹ãƒ¬ãƒƒãƒ‰
 void Urg3dNode2::scan_thread()
 {
     RCLCPP_ERROR(get_logger(), "start thread.");
@@ -310,10 +310,10 @@ void Urg3dNode2::scan_thread()
             }
         }
         
-        // Inactiveó‘Ô”»’è
+        // InactiveçŠ¶æ…‹åˆ¤å®š
         rclcpp_lifecycle::State state = get_current_state();
         if(state.label() == "inactive"){
-            // ÄÚ‘±ˆ—
+            // å†æ¥ç¶šå‡¦ç†
             reconnect();
             reconnect_count_++;
 
@@ -321,23 +321,23 @@ void Urg3dNode2::scan_thread()
             continue;
         }
 
-        // ƒXƒLƒƒƒ“İ’è
+        // ã‚¹ã‚­ãƒ£ãƒ³è¨­å®š
         set_scan_parameter();
 
-        // ’²®ƒ‚[ƒh
+        // èª¿æ•´ãƒ¢ãƒ¼ãƒ‰
         if (calibrate_time_) {
             calibrate_system_latency(URG_NODE2_CALIBRATION_MEASUREMENT_TIME);
         }
 
-        // LiDARó‘ÔXV
-        // !!!’Ç‰Á‚ğŒŸ“¢ 
+        // LiDARçŠ¶æ…‹æ›´æ–°
+        // !!!è¿½åŠ ã‚’æ¤œè¨ 
 
-        // Œv‘ªŠJn
+        // è¨ˆæ¸¬é–‹å§‹
         int ret = urg3d_high_start_data(&urg_, URG3D_DISTANCE_INTENSITY);
         if(ret < 0){
             RCLCPP_WARN(get_logger(), "Could not start Hokuyo measurement\n");
     
-            // ÄÚ‘±ˆ—
+            // å†æ¥ç¶šå‡¦ç†
             reconnect();
             reconnect_count_++;
     
@@ -351,7 +351,7 @@ void Urg3dNode2::scan_thread()
         rclcpp::Time prev_time = system_clock.now();
 
         while(!close_thread_){
-            // Inactiveó‘Ô”»’è
+            // InactiveçŠ¶æ…‹åˆ¤å®š
             rclcpp_lifecycle::State state = get_current_state();
             if (state.label() == "inactive") {
                 urg3d_high_stop_data(&urg_, URG3D_DISTANCE_INTENSITY);
@@ -359,7 +359,7 @@ void Urg3dNode2::scan_thread()
                 break;
             }
 
-            // Œv‘ªƒf[ƒ^ˆ—
+            // è¨ˆæ¸¬ãƒ‡ãƒ¼ã‚¿å‡¦ç†
             if(urg3d_next_receive_ready(&urg_)){
                 if(urg3d_high_get_measurement_data(&urg_, &measurement_data_)){
                     if(prev_frame_ == -1 && prev_field_ == -1){
@@ -402,16 +402,16 @@ void Urg3dNode2::scan_thread()
             }
             */
 
-            // ƒGƒ‰[ƒJƒEƒ“ƒg”»’è
+            // ã‚¨ãƒ©ãƒ¼ã‚«ã‚¦ãƒ³ãƒˆåˆ¤å®š
             if(error_count_ > error_limit_){
                 RCLCPP_ERROR(get_logger(), "Error count exceeded limit, reconnecting.");
-                // ÄÚ‘±ˆ—
+                // å†æ¥ç¶šå‡¦ç†
                 reconnect();
                 reconnect_count_++;
                 break;
             }
             else{
-                // ƒGƒ‰[ƒJƒEƒ“ƒg‚ÌƒŠƒZƒbƒg
+                // ã‚¨ãƒ©ãƒ¼ã‚«ã‚¦ãƒ³ãƒˆã®ãƒªã‚»ãƒƒãƒˆ
                 rclcpp::Time current_time = system_clock.now();
                 rclcpp::Duration period = current_time - prev_time;
                 if (period.seconds() >= error_reset_period_) {
@@ -422,41 +422,41 @@ void Urg3dNode2::scan_thread()
         }
     }
 
-    // Ø’fˆ—
+    // åˆ‡æ–­å‡¦ç†
     disconnect();
 }
 
-// ƒXƒLƒƒƒ“ƒgƒsƒbƒNì¬(PointCloudŒ^)
+// ã‚¹ã‚­ãƒ£ãƒ³ãƒˆãƒ”ãƒƒã‚¯ä½œæˆ(PointCloudå‹)
 bool Urg3dNode2::create_scan_message(sensor_msgs::msg::PointCloud & msg)
 {
     return true;
 }
 
-// ƒXƒLƒƒƒ“ƒgƒsƒbƒNì¬(PointCloud2Œ^)
+// ã‚¹ã‚­ãƒ£ãƒ³ãƒˆãƒ”ãƒƒã‚¯ä½œæˆ(PointCloud2å‹)
 bool Urg3dNode2::create_scan_message2(sensor_msgs::msg::PointCloud2 & msg)
 {
     return true;
 }
 
-// ƒVƒXƒeƒ€ƒŒƒCƒeƒ“ƒV‚ÌŒv‘ª
+// ã‚·ã‚¹ãƒ†ãƒ ãƒ¬ã‚¤ãƒ†ãƒ³ã‚·ã®è¨ˆæ¸¬
 void Urg3dNode2::calibrate_system_latency(size_t num_measurements)
 {
     
 }
 
-// ROS‚ÆLiDAR‚Ì·‚ÌŒvZ
+// ROSæ™‚åˆ»ã¨LiDARæ™‚åˆ»ã®å·®ã®è¨ˆç®—
 rclcpp::Duration Urg3dNode2::get_native_clock_offset(size_t num_measurements)
 {
     return rclcpp::Duration::from_seconds(0);
 }
 
-// ƒVƒXƒeƒ€‚ÆLiDAR‚Ì·‚ÌŒvZ
+// ã‚·ã‚¹ãƒ†ãƒ æ™‚åˆ»ã¨LiDARæ™‚åˆ»ã®å·®ã®è¨ˆç®—
 rclcpp::Duration Urg3dNode2::get_time_stamp_offset(size_t num_measurements)
 {
     return rclcpp::Duration::from_seconds(0);
 }
 
-// w”ˆÚ“®•½‹Ï‚É‚æ‚é“®“I•â³
+// æŒ‡æ•°ç§»å‹•å¹³å‡ã«ã‚ˆã‚‹å‹•çš„è£œæ­£
 rclcpp::Time Urg3dNode2::get_synchronized_time(long time_stamp, rclcpp::Time system_time_stamp)
 {
     rclcpp::Clock system_clock(RCL_SYSTEM_TIME);
@@ -464,13 +464,13 @@ rclcpp::Time Urg3dNode2::get_synchronized_time(long time_stamp, rclcpp::Time sys
     return now;
 }
 
-// Ú‘±æLiDAR‚ª‹­“xo—Í‚É‘Î‰‚µ‚Ä‚¢‚é‚©‚Ç‚¤‚©
+// æ¥ç¶šå…ˆLiDARãŒå¼·åº¦å‡ºåŠ›ã«å¯¾å¿œã—ã¦ã„ã‚‹ã‹ã©ã†ã‹
 bool Urg3dNode2::is_intensity_supported(void)
 {
     return true;
 }
 
-// f’fî•ñ“ü—Í
+// è¨ºæ–­æƒ…å ±å…¥åŠ›
 void Urg3dNode2::populate_diagnostics_status(diagnostic_updater::DiagnosticStatusWrapper & status)
 {
     if(!is_connected_){
@@ -503,14 +503,14 @@ void Urg3dNode2::populate_diagnostics_status(diagnostic_updater::DiagnosticStatu
     status.add("Reconnection Count", reconnect_count_);
 }
 
-// ƒXƒLƒƒƒ“ƒXƒŒƒbƒh‚ÌŠJn
+// ã‚¹ã‚­ãƒ£ãƒ³ã‚¹ãƒ¬ãƒƒãƒ‰ã®é–‹å§‹
 void Urg3dNode2::start_thread(void)
 {
     close_thread_ = false;
     scan_thread_ = std::thread(std::bind(&Urg3dNode2::scan_thread, this));
 }
 
-// ƒXƒLƒƒƒ“ƒXƒŒƒbƒh‚Ì’â~
+// ã‚¹ã‚­ãƒ£ãƒ³ã‚¹ãƒ¬ãƒƒãƒ‰ã®åœæ­¢
 void Urg3dNode2::stop_thread(void)
 {
     close_thread_ = true;
@@ -519,15 +519,15 @@ void Urg3dNode2::stop_thread(void)
     }
 }
 
-// Diagnostics‚ÌŠJn
+// Diagnosticsã®é–‹å§‹
 void Urg3dNode2::start_diagnostics(void)
 {
-    // Diagnosticsİ’è
+    // Diagnosticsè¨­å®š
     diagnostic_updater_.reset(new diagnostic_updater::Updater(this));
     diagnostic_updater_->setHardwareID(device_id_);
     diagnostic_updater_->add("Hardware Status", this, &Urg3dNode2::populate_diagnostics_status);
 
-    // DiagnosticsƒgƒsƒbƒNİ’è
+    // Diagnosticsãƒˆãƒ”ãƒƒã‚¯è¨­å®š
     diagnostics_freq_ = 1.0 / scan_period_;
     scan_freq_.reset(
       new diagnostic_updater::HeaderlessTopicDiagnostic(
@@ -538,15 +538,15 @@ void Urg3dNode2::start_diagnostics(void)
           diagnostics_window_time_)));
 }
 
-// Diagnostics‚Ì’â~
+// Diagnosticsã®åœæ­¢
 void Urg3dNode2::stop_diagnostics(void)
 {
-    // Diagnostics‰ğ•ú
+    // Diagnosticsè§£æ”¾
     scan_freq_.reset();
 
-    // b’è‘Î‰
-    // Diagnostics‚ª’Ç‰Á‚µ‚½ƒpƒ‰ƒ[ƒ^‚Ì‰ğ•ú
-    // diagnostic_updater‚ğÄ‚Ñ¶¬‚·‚é‚Ædeclare_parameter‚ªŒÄ‚Î‚êƒGƒ‰[‚É‚È‚é
+    // æš«å®šå¯¾å¿œ
+    // DiagnosticsãŒè¿½åŠ ã—ãŸãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã®è§£æ”¾
+    // diagnostic_updaterã‚’å†ã³ç”Ÿæˆã™ã‚‹ã¨declare_parameterãŒå‘¼ã°ã‚Œã‚¨ãƒ©ãƒ¼ã«ãªã‚‹
     //   https://github.com/ros/diagnostics/pull/227
     if (has_parameter("diagnostic_updater.period")) {
         try {
