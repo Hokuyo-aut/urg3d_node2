@@ -376,6 +376,7 @@ void Urg3dNode2::scan_thread()
                         }
 
                         // publish
+                        sensor_msgs::msg::PointCloud2 msg;
                         if(create_scan_message2(msg)){
                             RCLCPP_DEBUG(get_logger(), "publish data.");
                             scan_pub_2->publish(msg);
@@ -393,7 +394,7 @@ void Urg3dNode2::scan_thread()
                         }
                     }
                 }
-                else if(urg3d_low_get_binary(&urg_, &header_, data, &length_data_) > 0) {
+                else if(urg3d_low_get_binary(&urg_, &header_, data_, &length_data_) > 0) {
                     // error check
 
                 }
