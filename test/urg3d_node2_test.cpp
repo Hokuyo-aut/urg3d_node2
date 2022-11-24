@@ -129,13 +129,13 @@ TEST(YVT_30LX, normal_scan) {
     EXPECT_EQ(node->get_current_state().label(), "active");
     
     // publisher test
-    ep_scan = node->get_publishers_info_by_topic("scan");
+    ep_scan = node->get_publishers_info_by_topic("hokuyo_cloud2");
     ep_diag = node->get_publishers_info_by_topic("diagnostics");
     EXPECT_EQ((int)ep_scan.size(), 1);
     EXPECT_EQ((int)ep_diag.size(), 1);
     
     // scan wait for 10sec
-    scan_wait(exe1, 10.0);
+    scan_wait(exe1, 1.0);
     
     // compare
     // ���C�u�����̎d�l�𒲂ׂă`�F�b�N���ڂ����߂�
@@ -157,7 +157,7 @@ TEST(YVT_30LX, normal_scan) {
     EXPECT_EQ(node->get_current_state().label(), "finalized");
     
     // publisher test
-    ep_scan = node->get_publishers_info_by_topic("scan");
+    ep_scan = node->get_publishers_info_by_topic("hokuyo_cloud2");
     ep_diag = node->get_publishers_info_by_topic("diagnostics");
     EXPECT_EQ((int)ep_scan.size(), 0);
     EXPECT_EQ((int)ep_diag.size(), 0);

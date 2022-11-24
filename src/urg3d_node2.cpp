@@ -314,13 +314,15 @@ void Urg3dNode2::scan_thread()
         rclcpp_lifecycle::State state = get_current_state();
         if(state.label() == "inactive"){
             // 再接続処理
+            /*
             reconnect();
             reconnect_count_++;
 
             rclcpp::sleep_for(100ms);
             continue;
+            */
         }
-
+        
         // スキャン設定
         set_scan_parameter();
 
@@ -332,6 +334,7 @@ void Urg3dNode2::scan_thread()
         // LiDAR状態更新
         // !!!追加を検討 
 
+        
         // 計測開始
         int ret = urg3d_high_start_data(&urg_, URG3D_DISTANCE_INTENSITY);
         if(ret < 0){
@@ -350,7 +353,9 @@ void Urg3dNode2::scan_thread()
         rclcpp::Clock system_clock(RCL_SYSTEM_TIME);
         rclcpp::Time prev_time = system_clock.now();
 
+        
         while(!close_thread_){
+            
             // Inactive状態判定
             rclcpp_lifecycle::State state = get_current_state();
             if (state.label() == "inactive") {
@@ -358,7 +363,7 @@ void Urg3dNode2::scan_thread()
                 is_measurement_started_ = false;
                 break;
             }
-
+            
             // 計測データ処理
             if(urg3d_next_receive_ready(&urg_)){
                 // distance & intensity data
@@ -590,6 +595,7 @@ void Urg3dNode2::start_diagnostics(void)
 void Urg3dNode2::stop_diagnostics(void)
 {
     // Diagnostics解放
+    diagnostic_updater_.reset();
     scan_freq_.reset();
 
     // 暫定対応
