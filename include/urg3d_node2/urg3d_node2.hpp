@@ -276,6 +276,10 @@ private:
   urg3d_t urg_;
   /** LiDARヘッダ構造体 */
   urg3d_vssp_header_t header_;
+  /** データ格納 */
+  char data_[URG3D_MAX_RX_LENGTH];
+  /** 受信データ長 */
+  int length_data_;
   /** LiDARバージョン構造体 */
   urg3d_sensor_version_t version_;
   
@@ -328,6 +332,8 @@ private:
 
   /** 計測データ */
   urg3d_measurement_data_t measurement_data_;
+  /** 補助データ */
+  urg3d_auxiliary_data_t auxiliary_data_;
   /** 前フレーム */
   int prev_frame_;
   /** 前フィールド */

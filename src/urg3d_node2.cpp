@@ -361,6 +361,7 @@ void Urg3dNode2::scan_thread()
 
             // 計測データ処理
             if(urg3d_next_receive_ready(&urg_)){
+                // distance & intensity data
                 if(urg3d_high_get_measurement_data(&urg_, &measurement_data_)){
                     if(prev_frame_ == -1 && prev_field_ == -1){
                         if(measurement_data_.line_number == 0){
@@ -375,32 +376,38 @@ void Urg3dNode2::scan_thread()
                         }
 
                         // publish
-                        //if(create_scan_message2(msg)){
-                        //scan_pub_2->publish(msg);
-                        RCLCPP_DEBUG(get_logger(), "publish data.");
-                        if(scan_freq_){
-                            scan_freq_->tick();
+                        if(create_scan_message2(msg)){
+                            RCLCPP_DEBUG(get_logger(), "publish data.");
+                            scan_pub_2->publish(msg);
+                            if(scan_freq_){
+                                scan_freq_->tick();
+                            }
+                        }
+                        else{
+                            RCLCPP_WARN(get_logger(), "Could not get scan.");
+                            error_count_++;
+                            total_error_count_++;
+                            //device_status_ = urg_sensor_status(&urg_);
+                            //sensor_status_ = urg_sensor_state(&urg_);
+                            //is_stable_ = urg_is_stable(&urg_);
                         }
                     }
                 }
-            }
-            /*
-            sensor_msgs::msg::PointCloud2 msg;
-            if(create_scan_message2(msg)){
-                scan_pub_2->publish(msg);
-                if(scan_freq_){
-                    scan_freq_->tick();
+                else if(urg3d_low_get_binary(&urg_, &header_, data, &length_data_) > 0) {
+                    // error check
+
+                }
+
+                // auxiliary data
+                if(publish_auxiliary_){
+                    if(urg3d_high_get_auxiliary_data(&urg_, &auxiliary_data_) > 0) {
+                        ;
+                    }
+                    else if(urg3d_low_get_binary(&urg_, &header_, data_, &length_data_) > 0) {
+
+                    }
                 }
             }
-            else{
-                RCLCPP_WARN(get_logger(), "Could not get scan.");
-                error_count_++;
-                total_error_count_++;
-                //device_status_ = urg_sensor_status(&urg_);
-                //sensor_status_ = urg_sensor_state(&urg_);
-                //is_stable_ = urg_is_stable(&urg_);
-            }
-            */
 
             // エラーカウント判定
             if(error_count_ > error_limit_){
@@ -441,7 +448,46 @@ bool Urg3dNode2::create_scan_message2(sensor_msgs::msg::PointCloud2 & msg)
 // システムレイテンシの計測
 void Urg3dNode2::calibrate_system_latency(size_t num_measurements)
 {
-    
+    if (!is_connected_) {
+        RCLCPP_WARN(get_logger(), "Unable to calibrate time offset. Not Ready.");
+        return;
+    }
+
+    try {
+        RCLCPP_INFO(get_logger(), "Starting calibration. This will take a few seconds.");
+        RCLCPP_INFO(get_logger(), "Time calibration is still experimental.");
+
+        system_latency_ = rclcpp::Duration(0ns);
+
+        rclcpp::Duration start_offset = get_native_clock_offset(1);
+        rclcpp::Duration prev_offset(0ns);
+
+        std::vector<rclcpp::Duration> time_offsets;
+        for (size_t i = 0; i < num_measurements; i++) {
+            rclcpp::Duration scan_offset = get_time_stamp_offset(1);
+            rclcpp::Duration post_offset = get_native_clock_offset(1);
+            rclcpp::Duration adjusted_scan_offset = scan_offset - start_offset;
+            rclcpp::Duration adjusted_post_offset = post_offset - start_offset;
+            rclcpp::Duration average_offset = rclcpp::Duration::from_seconds(
+              (adjusted_post_offset.seconds() + prev_offset.seconds()) / 2.0);
+            time_offsets.push_back(adjusted_scan_offset - average_offset);
+            prev_offset = adjusted_post_offset;
+        }
+
+        // 格納した差をソートし中央値を返す
+        std::nth_element(
+          time_offsets.begin(),
+          time_offsets.begin() + time_offsets.size() / 2, time_offsets.end());
+        system_latency_ = time_offsets[time_offsets.size() / 2];
+        
+        RCLCPP_INFO(
+          get_logger(), "Calibration finished. Latency is: %.4f sec.",
+          (double)(system_latency_.nanoseconds() * 1e-9));
+    }
+    catch (const std::runtime_error & e) {
+        RCLCPP_WARN(get_logger(), "Could not calibrate time offset: %s", e.what());
+        system_latency_ = rclcpp::Duration(0ns);
+    }
 }
 
 // ROS時刻とLiDAR時刻の差の計算
@@ -467,6 +513,7 @@ rclcpp::Time Urg3dNode2::get_synchronized_time(long time_stamp, rclcpp::Time sys
 // 接続先LiDARが強度出力に対応しているかどうか
 bool Urg3dNode2::is_intensity_supported(void)
 {
+    // 現状は全ての機種が対応
     return true;
 }
 
