@@ -245,6 +245,8 @@ bool Urg3dNode2::connect()
         return false;
     }
 
+    
+
     // バージョン情報取得
     result = urg3d_high_blocking_get_sensor_version(&urg_, &version_);
     if(result < 0){
@@ -266,6 +268,22 @@ bool Urg3dNode2::connect()
     ss << "scan. Hardware ID: " << device_id_;
     //ss << ", version:" << vendor_name_ << "," << product_name_ << "," << device_id_ << "," << firmware_version_ << "," << protocol_name_ << ",";
     RCLCPP_INFO(get_logger(), "%s", ss.str().c_str());
+
+    // インターレース設定
+    result = urg3d_high_blocking_set_horizontal_interlace_count(&urg_, interlace_h_);
+    if(result < 0){
+        RCLCPP_ERROR(get_logger(), "Could not setting.");
+        disconnect();
+
+        return false;
+    }
+    result = urg3d_high_blocking_set_vertical_interlace_count(&urg_, interlace_v_);
+    if(result < 0){
+        RCLCPP_ERROR(get_logger(), "Could not setting.");
+        disconnect();
+
+        return false;
+    }
 
     return true;
 }
@@ -301,7 +319,11 @@ void Urg3dNode2::scan_thread()
     int result = 0;
     reconnect_count_ = 0;
 
+    sensor_msgs::msg::PointCloud2 sample;
+    int ugulu = 0;
+
     while(!close_thread_){
+        RCLCPP_ERROR(get_logger(), "start loop.");
         
         if(!is_connected_){
             if(!connect()){
@@ -314,13 +336,11 @@ void Urg3dNode2::scan_thread()
         rclcpp_lifecycle::State state = get_current_state();
         if(state.label() == "inactive"){
             // 再接続処理
-            /*
-            reconnect();
-            reconnect_count_++;
+            //reconnect();
+            //reconnect_count_++;
 
-            rclcpp::sleep_for(100ms);
-            continue;
-            */
+            //rclcpp::sleep_for(100ms);
+            //continue;
         }
         
         // スキャン設定
@@ -347,13 +367,16 @@ void Urg3dNode2::scan_thread()
             continue;
         }
 
+        rclcpp::sleep_for(100ms);
+
         is_measurement_started_ = true;
         error_count_ = 0;
         
         rclcpp::Clock system_clock(RCL_SYSTEM_TIME);
         rclcpp::Time prev_time = system_clock.now();
 
-        
+        sensor_msgs::msg::PointCloud2 msg;
+
         while(!close_thread_){
             
             // Inactive状態判定
@@ -367,43 +390,68 @@ void Urg3dNode2::scan_thread()
             // 計測データ処理
             if(urg3d_next_receive_ready(&urg_)){
                 // distance & intensity data
+
                 if(urg3d_high_get_measurement_data(&urg_, &measurement_data_)){
-                    if(prev_frame_ == -1 && prev_field_ == -1){
-                        if(measurement_data_.line_number == 0){
-                            prev_frame_ = measurement_data_.frame_number;
-                            prev_field_ = measurement_data_.h_field_number;
+                    if(scan_freq_){
+                            scan_freq_->tick();
                         }
+                    
+                    if(prev_frame_ == -1){
+                        prev_frame_ = measurement_data_.frame_number;
+                        //if(measurement_data_.line_number == 0){
+                        //    prev_frame_ = measurement_data_.frame_number;
+                        //    prev_field_ = measurement_data_.h_field_number;
+                        //}
                     }
 
-                    if(prev_frame_ != -1 && prev_field_ != -1){
-                        if(prev_frame_ != measurement_data_.frame_number || prev_field_ != measurement_data_.h_field_number){
-                            break;
-                        }
-
-                        // publish
-                        sensor_msgs::msg::PointCloud2 msg;
+                    if(prev_frame_ != -1){
+                        // データ格納
                         if(create_scan_message2(msg)){
-                            RCLCPP_DEBUG(get_logger(), "publish data.");
-                            scan_pub_2->publish(msg);
-                            if(scan_freq_){
-                                scan_freq_->tick();
-                            }
+                            ;
                         }
                         else{
                             RCLCPP_WARN(get_logger(), "Could not get scan.");
                             error_count_++;
                             total_error_count_++;
-                            //device_status_ = urg_sensor_status(&urg_);
-                            //sensor_status_ = urg_sensor_state(&urg_);
-                            //is_stable_ = urg_is_stable(&urg_);
+                        }
+                        
+                        if(prev_frame_ != measurement_data_.frame_number){
+                            msg.point_step = measurement_data_.line_number;
+                            msg.height = measurement_data_.spots[0].point[0].intensity;
+                            msg.width = measurement_data_.spots[1].point[0].intensity;
+                            scan_pub_2->publish(msg);
+                            break;
+                        }
+                        
+                       if(measurement_data_.line_number != 0){
+                            break;
+                        }
+
+                        // 条件を満たした際にpublishする
+                        RCLCPP_DEBUG(get_logger(), "publish data.");
+                        ugulu++;
+                        msg.point_step = ugulu;
+                        msg.height = measurement_data_.timestamp_ms;
+                        scan_pub_2->publish(msg);
+                        msg.data.clear();
+                        if(scan_freq_){
+                            scan_freq_->tick();
                         }
                     }
                 }
                 else if(urg3d_low_get_binary(&urg_, &header_, data_, &length_data_) > 0) {
                     // error check
+                    if(strncmp(header_.type, "ERR", 3) == 0 || strncmp(header_.type , "_er", 3) == 0){
+                        if(header_.status[0] != '0'){
+                            sample.point_step++;// = sizeof(measurement_data_);
+                            scan_pub_2->publish(sample);
+
+                            break;
+                        }
+                    }
 
                 }
-
+                
                 // auxiliary data
                 if(publish_auxiliary_){
                     if(urg3d_high_get_auxiliary_data(&urg_, &auxiliary_data_) > 0) {
