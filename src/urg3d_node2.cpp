@@ -413,6 +413,20 @@ void Urg3dNode2::scan_thread()
             continue;
         }
 
+        // 補助データ配信
+        if(publish_auxiliary_ == true){
+            int ret = urg3d_high_start_data(&urg_, URG3D_AUXILIARY);
+            if(ret < 0){
+                RCLCPP_WARN(get_logger(), "Could not start Hokuyo Auxiliary\n");
+
+                // 再接続処理
+                reconnect();
+                reconnect_count_++;
+
+                continue;
+            }
+        }
+
         rclcpp::sleep_for(100ms);
 
         is_measurement_started_ = true;
@@ -483,10 +497,16 @@ void Urg3dNode2::scan_thread()
                 // auxiliary data
                 if(publish_auxiliary_){
                     if(urg3d_high_get_auxiliary_data(&urg_, &auxiliary_data_) > 0) {
-                        ;
+                        sensor_msgs::msg::Temperature temp;
+                        temp.temperature = auxiliary_data_.records[0].temperature;
+                        temp.header.frame_id = frame_id_;
+                        temp_pub_->publish(temp);
                     }
                     else if(urg3d_low_get_binary(&urg_, &header_, data_, &length_data_) > 0) {
-
+                        sensor_msgs::msg::Temperature temp;
+                        temp.temperature = 1;
+                        temp.header.frame_id = frame_id_;
+                        temp_pub_->publish(temp);
                     }
                 }
             }
