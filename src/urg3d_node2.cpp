@@ -391,11 +391,7 @@ void Urg3dNode2::scan_thread()
             if(urg3d_next_receive_ready(&urg_)){
                 // distance & intensity data
 
-                if(urg3d_high_get_measurement_data(&urg_, &measurement_data_)){
-                    if(scan_freq_){
-                            scan_freq_->tick();
-                        }
-                    
+                if(urg3d_high_get_measurement_data(&urg_, &measurement_data_)){                
                     if(prev_frame_ == -1){
                         prev_frame_ = measurement_data_.frame_number;
                         //if(measurement_data_.line_number == 0){
@@ -415,27 +411,25 @@ void Urg3dNode2::scan_thread()
                             total_error_count_++;
                         }
                         
-                        if(prev_frame_ != measurement_data_.frame_number){
-                            msg.point_step = measurement_data_.line_number;
-                            msg.height = measurement_data_.spots[0].point[0].intensity;
-                            msg.width = measurement_data_.spots[1].point[0].intensity;
-                            scan_pub_2->publish(msg);
-                            break;
-                        }
+                        //if(prev_frame_ != measurement_data_.frame_number){
+                        //    msg.point_step = measurement_data_.line_number;
+                        //    msg.height = measurement_data_.spots[0].point[0].intensity;
+                        //    msg.width = measurement_data_.spots[1].point[0].intensity;
+                        //    scan_pub_2->publish(msg);
+                        //    break;
+                        //}
                         
-                       if(measurement_data_.line_number != 0){
-                            break;
-                        }
-
-                        // 条件を満たした際にpublishする
-                        RCLCPP_DEBUG(get_logger(), "publish data.");
-                        ugulu++;
-                        msg.point_step = ugulu;
-                        msg.height = measurement_data_.timestamp_ms;
-                        scan_pub_2->publish(msg);
-                        msg.data.clear();
-                        if(scan_freq_){
-                            scan_freq_->tick();
+                       if(measurement_data_.line_number == 0){
+                            // 条件を満たした際にpublishする
+                            RCLCPP_DEBUG(get_logger(), "publish data.");
+                            ugulu++;
+                            msg.point_step = ugulu;
+                            msg.height = measurement_data_.timestamp_ms;
+                            scan_pub_2->publish(msg);
+                            msg.data.clear();
+                            if(scan_freq_){
+                                scan_freq_->tick();
+                            }
                         }
                     }
                 }
