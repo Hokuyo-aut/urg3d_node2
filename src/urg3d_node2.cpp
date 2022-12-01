@@ -225,6 +225,19 @@ void Urg3dNode2::initialize()
         sensor_msgs::msg::PointField::FLOAT32, "z", 1, sensor_msgs::msg::PointField::FLOAT32,
         "intensity", 1, sensor_msgs::msg::PointField::FLOAT32);
 
+    // サイクル設定
+    if (output_cycle_.compare("frame") == 0)
+        cycle_ = CYCLE_FRAME;
+    else if (output_cycle_.compare("field") == 0)
+        cycle_ = CYCLE_FIELD;
+    else if (output_cycle_.compare("line") == 0)
+        cycle_ = CYCLE_LINE;
+    else
+    {
+        RCLCPP_ERROR(get_logger(), "Unknown output_cycle value %s", output_cycle_.c_str());
+        cycle_ = CYCLE_FRAME;
+    }
+
     // フレーム、フィールド初期値
     prev_frame_ = -1;
     prev_field_ = -1;
@@ -422,8 +435,9 @@ void Urg3dNode2::scan_thread()
                         //    break;
                         //}
                         
-                       if(measurement_data_.line_number == 0){
-                            // 条件を満たした際にpublishする
+                        // 条件を満たした際にpublishする
+                        if(measurement_data_.line_number == 0){
+                            
                             RCLCPP_DEBUG(get_logger(), "publish data.");
                             scan_pub_2->publish(cloud2_);
                             cloud2_.data.clear();

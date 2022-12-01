@@ -341,6 +341,14 @@ private:
   int prev_frame_;
   /** 前フィールド */
   int prev_field_;
+  /** サイクル設定 */
+  enum PublishCycle
+  {
+    CYCLE_FIELD,
+    CYCLE_FRAME,
+    CYCLE_LINE
+  };
+  PublishCycle cycle_;
   
   /** 計測モード [URG3D_DISTANCE or URG3D_DISTANCE_INTENSITY or URG3D_AUXILIARY] */
   urg3d_measurement_type_t measurement_type_;
