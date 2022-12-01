@@ -69,8 +69,11 @@ Urg3dNode2::CallbackReturn Urg3dNode2::on_configure(const rclcpp_lifecycle::Stat
     }
 
     // Publisher設定
-    scan_pub_1 = create_publisher<sensor_msgs::msg::PointCloud>("hokuyo_cloud", rclcpp::QoS(20));
+    //scan_pub_1 = create_publisher<sensor_msgs::msg::PointCloud>("hokuyo_cloud", rclcpp::QoS(20));
     scan_pub_2 = create_publisher<sensor_msgs::msg::PointCloud2>("hokuyo_cloud2", rclcpp::QoS(20));
+    imu_pub_ = create_publisher<sensor_msgs::msg::Imu>("imu", rclcpp::QoS(20));
+    mag_pub_ = create_publisher<sensor_msgs::msg::MagneticField>("mag", rclcpp::QoS(20));
+    temp_pub_ = create_publisher<sensor_msgs::msg::Temperature>("temp", rclcpp::QoS(20));
 
     // スレッド起動
     start_thread();
@@ -88,11 +91,20 @@ Urg3dNode2::CallbackReturn Urg3dNode2::on_activate(const rclcpp_lifecycle::State
     }
     else{
         // publisherの有効化
-        if(scan_pub_1){
-            scan_pub_1->on_activate();
-        }
+        //if(scan_pub_1){
+        //    scan_pub_1->on_activate();
+        //}
         if(scan_pub_2){
             scan_pub_2->on_activate();
+        }
+        if(imu_pub_){
+            imu_pub_->on_activate();
+        }
+        if(mag_pub_){
+            mag_pub_->on_activate();
+        }
+        if(temp_pub_){
+            temp_pub_->on_activate();
         }
 
         // Diagnostics開始
@@ -129,8 +141,11 @@ Urg3dNode2::CallbackReturn Urg3dNode2::on_cleanup(const rclcpp_lifecycle::State 
     stop_thread();
 
     // publisherの解放
-    scan_pub_1.reset();
+    //scan_pub_1.reset();
     scan_pub_2.reset();
+    imu_pub_.reset();
+    mag_pub_.reset();
+    temp_pub_.reset();
 
     // 切断
     disconnect();
@@ -150,8 +165,11 @@ Urg3dNode2::CallbackReturn Urg3dNode2::on_shutdown(const rclcpp_lifecycle::State
     stop_diagnostics();
 
     // publisherの解放
-    scan_pub_1.reset();
+    //scan_pub_1.reset();
     scan_pub_2.reset();
+    imu_pub_.reset();
+    mag_pub_.reset();
+    temp_pub_.reset();
 
     // 切断
     disconnect();
@@ -171,8 +189,11 @@ Urg3dNode2::CallbackReturn Urg3dNode2::on_error(const rclcpp_lifecycle::State & 
     stop_diagnostics();
 
     // publisherの解放
-    scan_pub_1.reset();
+    //scan_pub_1.reset();
     scan_pub_2.reset();
+    imu_pub_.reset();
+    mag_pub_.reset();
+    temp_pub_.reset();
 
     // 切断
     disconnect();

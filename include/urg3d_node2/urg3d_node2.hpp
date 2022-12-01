@@ -264,6 +264,11 @@ private:
   /** スキャンデータのpublisher */
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud>> scan_pub_1;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>> scan_pub_2;
+
+  /** 補助データのpublisher */
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Imu>> imu_pub_;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::MagneticField>> mag_pub_;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Temperature>> temp_pub_;
   
   /** Diagnositcs Updater */
   std::unique_ptr<diagnostic_updater::Updater> diagnostic_updater_;
@@ -351,9 +356,6 @@ private:
     CYCLE_LINE
   };
   PublishCycle cycle_;
-  
-  /** 計測モード [URG3D_DISTANCE or URG3D_DISTANCE_INTENSITY or URG3D_AUXILIARY] */
-  urg3d_measurement_type_t measurement_type_;
   
   /** 通信エラーカウンタ（再接続時にリセット） */
   int error_count_;
