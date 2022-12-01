@@ -499,7 +499,7 @@ bool Urg3dNode2::create_scan_message2(sensor_msgs::msg::PointCloud2 & msg)
     if(msg.data.size() == 0){
         // PointCloud2 メッセージ初期化
         msg.header.frame_id = frame_id_;
-        //msg.header.stamp = ;
+        //msg.header.stamp = rclcpp::Duration(0);
         msg.row_step = 0;
         msg.width = 0;
     }
@@ -521,8 +521,9 @@ bool Urg3dNode2::create_scan_message2(sensor_msgs::msg::PointCloud2 & msg)
             *(data++) = measurement_data_.spots[spot].point[echo].z_m;
             *(data++) = measurement_data_.spots[spot].point[echo].intensity;
 
-            msg.width++;
+            
         }
+        msg.width++;
     }
     msg.row_step = msg.width * msg.point_step;
 

@@ -3,10 +3,10 @@ urg3d_node2:
     ip_address: '192.168.0.10'
     ip_port: 10940
     frame_id : 'hokuyo3d'
-    range_min: 0.0
+    range_min: 0.1
     interlace_h: 3
-    interlace_v: 3
-    output_cycle: 'line'
+    interlace_v: 2
+    output_cycle: 'field'
     publish_intensity: false
     publish_auxiliary: false
     calibrate_time : false
