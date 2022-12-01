@@ -374,7 +374,14 @@ void Urg3dNode2::scan_thread()
 
         
         // 計測開始
-        int ret = urg3d_high_start_data(&urg_, URG3D_DISTANCE_INTENSITY);
+        urg3d_measurement_type_t type;
+        if(publish_intensity_ == true){
+            type = URG3D_DISTANCE_INTENSITY;
+        }
+        else{
+            type = URG3D_DISTANCE;
+        }
+        int ret = urg3d_high_start_data(&urg_, type);
         if(ret < 0){
             RCLCPP_WARN(get_logger(), "Could not start Hokuyo measurement\n");
     
