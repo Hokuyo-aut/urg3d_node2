@@ -332,6 +332,8 @@ private:
 
   /** スキャン時間(sec) */
   double scan_period_ = 0.05;
+  /** 1フレームのライン数 */
+  double frame_per_lines_ = 35;
 
   /** 計測データ */
   urg3d_measurement_data_t measurement_data_;

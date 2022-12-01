@@ -659,7 +659,16 @@ void Urg3dNode2::start_diagnostics(void)
     diagnostic_updater_->add("Hardware Status", this, &Urg3dNode2::populate_diagnostics_status);
 
     // Diagnosticsトピック設定
-    diagnostics_freq_ = 1.0 / scan_period_;
+    if(cycle_ == CYCLE_FIELD){
+        diagnostics_freq_ = 1.0 / scan_period_ / interlace_h_ / interlace_v_;
+    }
+    else if(cycle_ == CYCLE_FRAME){
+        diagnostics_freq_ = 1.0 / scan_period_;
+    }
+    else if(cycle_ == CYCLE_LINE){
+        diagnostics_freq_ = 1.0 / scan_period_ * frame_per_lines_;
+    }
+
     scan_freq_.reset(
       new diagnostic_updater::HeaderlessTopicDiagnostic(
         "Point Cloud2",
