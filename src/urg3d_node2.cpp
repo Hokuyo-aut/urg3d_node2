@@ -427,20 +427,15 @@ void Urg3dNode2::scan_thread()
                             total_error_count_++;
                         }
                         
-                        //if(prev_frame_ != measurement_data_.frame_number){
-                        //    msg.point_step = measurement_data_.line_number;
-                        //    msg.height = measurement_data_.spots[0].point[0].intensity;
-                        //    msg.width = measurement_data_.spots[1].point[0].intensity;
-                        //    scan_pub_2->publish(msg);
-                        //    break;
-                        //}
-                        
                         // 条件を満たした際にpublishする
-                        if(measurement_data_.line_number == 0){
-                            
+                        if((cycle_ == CYCLE_FIELD && (prev_frame_ != measurement_data_.frame_number)) ||
+                            (cycle_ == CYCLE_FRAME && (measurement_data_.line_number == 0)) ||
+                            (cycle_ == CYCLE_LINE)){
+  
                             RCLCPP_DEBUG(get_logger(), "publish data.");
                             scan_pub_2->publish(cloud2_);
                             cloud2_.data.clear();
+                            prev_frame_ = measurement_data_.frame_number;
                             if(scan_freq_){
                                 scan_freq_->tick();
                             }
