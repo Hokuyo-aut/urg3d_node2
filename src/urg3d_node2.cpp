@@ -216,6 +216,16 @@ void Urg3dNode2::initialize()
     hardware_clock_adj_ = 0;
     adj_count_ = 0;
 
+    // PointCloud2 Field設定
+    cloud2_.height = 1;
+    cloud2_.is_bigendian = false;
+    cloud2_.is_dense = false;
+    sensor_msgs::PointCloud2Modifier pc2_modifier(cloud2_);
+    pc2_modifier.setPointCloud2Fields(4, "x", 1, sensor_msgs::msg::PointField::FLOAT32, "y", 1, 
+        sensor_msgs::msg::PointField::FLOAT32, "z", 1, sensor_msgs::msg::PointField::FLOAT32,
+        "intensity", 1, sensor_msgs::msg::PointField::FLOAT32);
+
+    // フレーム、フィールド初期値
     prev_frame_ = -1;
     prev_field_ = -1;
 }
@@ -244,8 +254,6 @@ bool Urg3dNode2::connect()
 
         return false;
     }
-
-    
 
     // バージョン情報取得
     result = urg3d_high_blocking_get_sensor_version(&urg_, &version_);
@@ -319,9 +327,6 @@ void Urg3dNode2::scan_thread()
     int result = 0;
     reconnect_count_ = 0;
 
-    sensor_msgs::msg::PointCloud2 sample;
-    int ugulu = 0;
-
     while(!close_thread_){
         RCLCPP_ERROR(get_logger(), "start loop.");
         
@@ -375,8 +380,6 @@ void Urg3dNode2::scan_thread()
         rclcpp::Clock system_clock(RCL_SYSTEM_TIME);
         rclcpp::Time prev_time = system_clock.now();
 
-        sensor_msgs::msg::PointCloud2 msg;
-
         while(!close_thread_){
             
             // Inactive状態判定
@@ -389,8 +392,8 @@ void Urg3dNode2::scan_thread()
             
             // 計測データ処理
             if(urg3d_next_receive_ready(&urg_)){
+                
                 // distance & intensity data
-
                 if(urg3d_high_get_measurement_data(&urg_, &measurement_data_)){                
                     if(prev_frame_ == -1){
                         prev_frame_ = measurement_data_.frame_number;
@@ -402,7 +405,7 @@ void Urg3dNode2::scan_thread()
 
                     if(prev_frame_ != -1){
                         // データ格納
-                        if(create_scan_message2(msg)){
+                        if(create_scan_message2(cloud2_)){
                             ;
                         }
                         else{
@@ -422,11 +425,8 @@ void Urg3dNode2::scan_thread()
                        if(measurement_data_.line_number == 0){
                             // 条件を満たした際にpublishする
                             RCLCPP_DEBUG(get_logger(), "publish data.");
-                            ugulu++;
-                            msg.point_step = ugulu;
-                            msg.height = measurement_data_.timestamp_ms;
-                            scan_pub_2->publish(msg);
-                            msg.data.clear();
+                            scan_pub_2->publish(cloud2_);
+                            cloud2_.data.clear();
                             if(scan_freq_){
                                 scan_freq_->tick();
                             }
@@ -437,9 +437,6 @@ void Urg3dNode2::scan_thread()
                     // error check
                     if(strncmp(header_.type, "ERR", 3) == 0 || strncmp(header_.type , "_er", 3) == 0){
                         if(header_.status[0] != '0'){
-                            sample.point_step++;// = sizeof(measurement_data_);
-                            scan_pub_2->publish(sample);
-
                             break;
                         }
                     }
@@ -490,6 +487,36 @@ bool Urg3dNode2::create_scan_message(sensor_msgs::msg::PointCloud & msg)
 // スキャントピック作成(PointCloud2型)
 bool Urg3dNode2::create_scan_message2(sensor_msgs::msg::PointCloud2 & msg)
 {
+    if(msg.data.size() == 0){
+        // PointCloud2 メッセージ初期化
+        msg.header.frame_id = frame_id_;
+        //msg.header.stamp = ;
+        msg.row_step = 0;
+        msg.width = 0;
+    }
+
+    // PointCloud2データ格納
+    msg.data.resize((msg.width + measurement_data_.spot_count) * msg.point_step);
+
+    float* data = reinterpret_cast<float*>(&cloud2_.data[0]);
+    data += cloud2_.width * cloud2_.point_step / sizeof(float);
+
+    for(int spot = 0; spot < measurement_data_.spot_count; ++spot){
+        for(int echo = 0; echo < measurement_data_.spots[spot].echo_count; ++echo){
+            if(measurement_data_.spots[spot].polar[echo].range_m < range_min_){
+                continue;
+            }
+
+            *(data++) = measurement_data_.spots[spot].point[echo].x_m;
+            *(data++) = measurement_data_.spots[spot].point[echo].y_m;
+            *(data++) = measurement_data_.spots[spot].point[echo].z_m;
+            *(data++) = measurement_data_.spots[spot].point[echo].intensity;
+
+            msg.width++;
+        }
+    }
+    msg.row_step = msg.width * msg.point_step;
+
     return true;
 }
 

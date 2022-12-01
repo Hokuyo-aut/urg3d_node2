@@ -257,6 +257,9 @@ private:
    * @details Diagnosticsの資源解放と登録されたパラメータの削除を行う
    */
   void stop_diagnostics(void);
+
+  /** PointCloud2データ */
+  sensor_msgs::msg::PointCloud2 cloud2_;
   
   /** スキャンデータのpublisher */
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud>> scan_pub_1;
