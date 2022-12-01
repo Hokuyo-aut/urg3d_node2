@@ -327,8 +327,8 @@ private:
   /** プロトコル名 */
   std::string protocol_name_;
 
-  /** スキャン時間(sec) : urg_scan_usec()の値(usec)をsecに変換したものを格納 */
-  double scan_period_;
+  /** スキャン時間(sec) */
+  double scan_period_ = 0.05;
 
   /** 計測データ */
   urg3d_measurement_data_t measurement_data_;
