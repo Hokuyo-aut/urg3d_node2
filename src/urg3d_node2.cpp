@@ -401,17 +401,16 @@ void Urg3dNode2::scan_thread()
             int ret = urg3d_high_start_data(&urg_, URG3D_AUXILIARY);
             if(ret < 0){
                 RCLCPP_WARN(get_logger(), "Could not start Hokuyo Auxiliary\n");
-
-                // 再接続処理
-                reconnect();
-                reconnect_count_++;
-
-                continue;
+            }
+        }
+        else{
+            int ret = urg3d_high_stop_data(&urg_, URG3D_AUXILIARY);
+            if(ret < 0){
+                RCLCPP_WARN(get_logger(), "Could not stop Hokuyo Auxiliary\n");
             }
         }
 
         // 計測開始
-        
         urg3d_measurement_type_t type;
         if(publish_intensity_ == true){
             type = URG3D_DISTANCE_INTENSITY;
@@ -430,8 +429,6 @@ void Urg3dNode2::scan_thread()
             continue;
         }
         
-       //ret = urg3d_high_stop_data(&urg_, URG3D_DISTANCE_INTENSITY);
-
         rclcpp::sleep_for(100ms);
 
         is_measurement_started_ = true;
@@ -501,13 +498,6 @@ void Urg3dNode2::scan_thread()
                             error_count_++;
                             total_error_count_++;
                     }
-
-
-
-                        //sensor_msgs::msg::Temperature temp;
-                        //temp.temperature = auxiliary_data_.records[0].temperature;
-                        //temp.header.frame_id = frame_id_;
-                        //temp_pub_->publish(temp);
                 }
                 else if(urg3d_low_get_binary(&urg_, &header_, data_, &length_data_) > 0) {
                     // error check
@@ -516,27 +506,10 @@ void Urg3dNode2::scan_thread()
                             break;
                         }
                     }
-                else{
-                    rclcpp::sleep_for(10ms);;
-                }
-                }
-                /*
-                // auxiliary data
-                if(publish_auxiliary_){
-                    if(urg3d_high_get_auxiliary_data(&urg_, &auxiliary_data_) > 0) {
-                        sensor_msgs::msg::Temperature temp;
-                        temp.temperature = ugulu++;//auxiliary_data_.records[0].temperature;
-                        temp.header.frame_id = frame_id_;
-                        temp_pub_->publish(temp);
-                    }
-                    else if(urg3d_low_get_binary(&urg_, &header_, data_, &length_data_) > 0) {
-                        sensor_msgs::msg::Temperature temp;
-                        temp.temperature = 1;
-                        temp.header.frame_id = frame_id_;
-                        temp_pub_->publish(temp);
+                    else{
+                        rclcpp::sleep_for(10ms);;
                     }
                 }
-                */
             }
 
             // エラーカウント判定
@@ -617,11 +590,24 @@ bool Urg3dNode2::create_auxiliary_message(sensor_msgs::msg::Imu & imu, sensor_ms
     if(capturng_record_count > MAXIMUM_RECORD_TIMES){
         capturng_record_count = MAXIMUM_RECORD_TIMES;
     }
+    int latest = auxiliary_data_.record_count - 1;
+    urg3d_auxiliary_record_t record = auxiliary_data_.records[latest];
+
     // Imuデータ
+    imu.angular_velocity.x = record.gyro_x * GYRO_FACTOR;
+    imu.angular_velocity.y = record.gyro_y * GYRO_FACTOR;
+    imu.angular_velocity.z = record.gyro_z * GYRO_FACTOR;
+    imu.linear_acceleration.x = record.accel_x * ACCEL_FACTOR;
+    imu.linear_acceleration.y = record.accel_y * ACCEL_FACTOR;
+    imu.linear_acceleration.z = record.accel_z * ACCEL_FACTOR;
 
     // MagneticFieldデータ
+    mag.magnetic_field.x = record.compass_x * COMPASS_FACTOR;
+    mag.magnetic_field.y = record.compass_y * COMPASS_FACTOR;
+    mag.magnetic_field.z = record.compass_z * COMPASS_FACTOR;
 
     // Temperatureデータ
+    temp.temperature = (record.temperature / TEMPERATURE_FACTOR) + TEMPERATURE_OFFSET;
 
     return true;
 }
