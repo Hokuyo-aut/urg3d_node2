@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "urg3d_node2/urg3d_node2.hpp"
+#include "urg3d_node2/auxiliary_define.hpp"
 
 namespace urg3d_node2
 {
@@ -489,11 +490,24 @@ void Urg3dNode2::scan_thread()
                     }
                 }
                 else if(urg3d_high_get_auxiliary_data(&urg_, &auxiliary_data_) > 0) {
+                    if(create_auxiliary_message(imu_, mag_, temp_)){
+                        RCLCPP_DEBUG(get_logger(), "publish auxiliary.");
+                        imu_pub_->publish(imu_);
+                        mag_pub_->publish(mag_);
+                        temp_pub_->publish(temp_);
+                    }
+                    else{
+                        RCLCPP_WARN(get_logger(), "Could not get auxiliary.");
+                            error_count_++;
+                            total_error_count_++;
+                    }
 
-                        sensor_msgs::msg::Temperature temp;
-                        temp.temperature = auxiliary_data_.records[0].temperature;
-                        temp.header.frame_id = frame_id_;
-                        temp_pub_->publish(temp);
+
+
+                        //sensor_msgs::msg::Temperature temp;
+                        //temp.temperature = auxiliary_data_.records[0].temperature;
+                        //temp.header.frame_id = frame_id_;
+                        //temp_pub_->publish(temp);
                 }
                 else if(urg3d_low_get_binary(&urg_, &header_, data_, &length_data_) > 0) {
                     // error check
@@ -588,6 +602,26 @@ bool Urg3dNode2::create_scan_message2(sensor_msgs::msg::PointCloud2 & msg)
         msg.width++;
     }
     msg.row_step = msg.width * msg.point_step;
+
+    return true;
+}
+
+// スキャントピック作成(Diagnostic)
+bool Urg3dNode2::create_auxiliary_message(sensor_msgs::msg::Imu & imu, sensor_msgs::msg::MagneticField & mag, sensor_msgs::msg::Temperature & temp)
+{
+    imu.header.frame_id = frame_id_;
+    mag.header.frame_id = frame_id_;
+    temp.header.frame_id = frame_id_;
+    
+    int capturng_record_count = auxiliary_data_.record_count;
+    if(capturng_record_count > MAXIMUM_RECORD_TIMES){
+        capturng_record_count = MAXIMUM_RECORD_TIMES;
+    }
+    // Imuデータ
+
+    // MagneticFieldデータ
+
+    // Temperatureデータ
 
     return true;
 }

@@ -187,6 +187,14 @@ private:
    * @retval false 取得失敗
    */
   bool create_scan_message2(sensor_msgs::msg::PointCloud2 & msg);
+
+  /**
+   * @brief スキャントピック作成(Diagnostic)
+   * @details LiDARから取得した補助データ情報のトピックへの変換を行う
+   * @retval true 正常終了
+   * @retval false 取得失敗
+  */
+  bool create_auxiliary_message(sensor_msgs::msg::Imu & imu, sensor_msgs::msg::MagneticField & mag, sensor_msgs::msg::Temperature & temp);
   
   /**
    * @brief システムレイテンシの計算
@@ -260,6 +268,12 @@ private:
 
   /** PointCloud2データ */
   sensor_msgs::msg::PointCloud2 cloud2_;
+  /** IMUデータ */
+  sensor_msgs::msg::Imu imu_;
+  /** MagneticFieldデータ */
+  sensor_msgs::msg::MagneticField mag_;
+  /** Temperatureデータ */
+  sensor_msgs::msg::Temperature temp_;
   
   /** スキャンデータのpublisher */
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud>> scan_pub_1;
