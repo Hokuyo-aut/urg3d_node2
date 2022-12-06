@@ -12,6 +12,6 @@ urg3d_node2:
     calibrate_time : false
     synchronize_time : false
     error_limit : 4
-    error_reset_period : 5.0
+    error_reset_period : 10.0
     diagnostics_tolerance : 0.05
     diagnostics_window_time : 5.0

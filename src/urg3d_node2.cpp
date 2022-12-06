@@ -45,7 +45,7 @@ Urg3dNode2::Urg3dNode2(const rclcpp::NodeOptions & node_options)
   publish_intensity_ = declare_parameter<bool>("publish_intensity", false);
   publish_auxiliary_ = declare_parameter<bool>("publish_auxiliary", false);
   error_limit_ = declare_parameter<int>("error_limit", 4);
-  error_reset_period_ = declare_parameter<double>("error_reset_period", 5.0),
+  error_reset_period_ = declare_parameter<double>("error_reset_period", 10.0),
   diagnostics_tolerance_ = declare_parameter<double>("diagnostics_tolerance", 0.05);
   diagnostics_window_time_ = declare_parameter<double>("diagnostics_window_time", 5.0);
   time_offset_ = declare_parameter<double>("time_offset", 0.0);
@@ -365,11 +365,10 @@ void Urg3dNode2::scan_thread()
     int ugulu = 0;
 
     while(!close_thread_){
-        RCLCPP_ERROR(get_logger(), "start loop.");
-        
+
         if(!is_connected_){
             if(!connect()){
-                rclcpp::sleep_for(500ms);
+                rclcpp::sleep_for(3000ms);
                 continue;
             }
         }
@@ -436,13 +435,17 @@ void Urg3dNode2::scan_thread()
         
         rclcpp::Clock system_clock(RCL_SYSTEM_TIME);
         rclcpp::Time prev_time = system_clock.now();
+        rclcpp::Time prev_check_time = system_clock.now();
+
+        bool is_get_data = false;
+        int error_check_period = 1;
 
         while(!close_thread_){
             
             // Inactive状態判定
             rclcpp_lifecycle::State state = get_current_state();
             if (state.label() == "inactive") {
-                urg3d_high_stop_data(&urg_, URG3D_DISTANCE_INTENSITY);
+                urg3d_high_stop_data(&urg_, type);
                 is_measurement_started_ = false;
                 break;
             }
@@ -450,14 +453,12 @@ void Urg3dNode2::scan_thread()
             // 計測データ処理
             if(urg3d_next_receive_ready(&urg_)){
                 
+                is_get_data = true;
+
                 // distance & intensity data
                 if(urg3d_high_get_measurement_data(&urg_, &measurement_data_)){                
                     if(prev_frame_ == -1){
                         prev_frame_ = measurement_data_.frame_number;
-                        //if(measurement_data_.line_number == 0){
-                        //    prev_frame_ = measurement_data_.frame_number;
-                        //    prev_field_ = measurement_data_.h_field_number;
-                        //}
                     }
 
                     if(prev_frame_ != -1){
@@ -506,13 +507,21 @@ void Urg3dNode2::scan_thread()
                             break;
                         }
                     }
-                    else{
-                        rclcpp::sleep_for(10ms);;
-                    }
                 }
-                else{
-                    //error_count_++;
-                    //total_error_count_++;
+            }
+            else{
+                rclcpp::sleep_for(10ms);
+
+                rclcpp::Time current_time = system_clock.now();
+                rclcpp::Duration period = current_time - prev_check_time;
+                if (period.seconds() >= error_check_period) {
+                    if(is_get_data == false){
+                        error_count_++;
+                        total_error_count_++;
+                    }
+
+                    prev_check_time = current_time;
+                    is_get_data = false;
                 }
             }
 
