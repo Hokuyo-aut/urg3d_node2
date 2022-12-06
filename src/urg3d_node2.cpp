@@ -281,23 +281,7 @@ bool Urg3dNode2::connect()
     // タイムアウト指定(2000ms)
     urg3d_high_set_blocking_timeout_ms(&urg_, 2000);
 
-    // 3Dセッション初期化
-    result = urg3d_high_blocking_init(&urg_);
-    if(result < 0){
-        RCLCPP_ERROR(get_logger(), "Could not init library");
-        disconnect();
-
-        return false;
-    }
-
-    // バージョン情報取得
-    result = urg3d_high_blocking_get_sensor_version(&urg_, &version_);
-    if(result < 0){
-        RCLCPP_ERROR(get_logger(), "Could not get version");
-        disconnect();
-
-        return false;
-    }
+    sensor_init();
 
     // LiDAR情報格納
     vendor_name_ = version_.vendor;
@@ -323,6 +307,102 @@ bool Urg3dNode2::connect()
     result = urg3d_high_blocking_set_vertical_interlace_count(&urg_, interlace_v_);
     if(result < 0){
         RCLCPP_ERROR(get_logger(), "Could not setting.");
+        disconnect();
+
+        return false;
+    }
+
+    return true;
+}
+
+// センサ接続時の初期化
+bool Urg3dNode2::sensor_init()
+{
+    int result = 0;
+    int retry_count = 0;
+    bool is_received = false;
+
+    const int RETRY_MAX_COUNT = 10;
+
+    // データ通信を止める
+    while(retry_count < RETRY_MAX_COUNT){
+        is_received = ((result = urg3d_high_stop_data(&urg_, URG3D_DISTANCE)) >= 0);
+        if(is_received == true){
+            result = 0;
+            is_received = ((result = urg3d_high_stop_data(&urg_, URG3D_DISTANCE_INTENSITY)) >= 0);
+            if(is_received == true){
+                result = 0;
+                is_received = ((result = urg3d_high_stop_data(&urg_, URG3D_AUXILIARY)) >= 0);
+                if(is_received == true){
+                    break;
+                }
+            }
+        }
+        rclcpp::sleep_for(10ms);
+        retry_count++;
+    }
+    if(is_received == false){
+        RCLCPP_ERROR(get_logger(), "Could not init library");
+        disconnect();
+
+        return false;
+    }
+
+    // buffer clear is needed after stop measurement
+    urg3d_low_purge(&urg_);
+
+    result = 0;
+    retry_count = 0;
+    is_received = false;
+
+    // ブロッキング設定初期化
+    while(retry_count < RETRY_MAX_COUNT){
+        is_received = ((result = urg3d_high_blocking_init(&urg_)) >= 0);
+        if(is_received == true){
+            break;
+        }
+        retry_count++;
+    }
+    if(is_received == false){
+        RCLCPP_ERROR(get_logger(), "Could not init library");
+        disconnect();
+
+        return false;
+    }
+
+    result = 0;
+    retry_count = 0;
+    is_received = false;
+
+    // ブロッキング終了処理
+    while(retry_count < RETRY_MAX_COUNT){
+        is_received = ((result = urg3d_high_blocking_wait_finished_initialize(&urg_)) >= 0);
+        if(is_received == true){
+            break;
+        }
+        retry_count++;
+    }
+    if(is_received == false){
+        RCLCPP_ERROR(get_logger(), "Could not init library");
+        disconnect();
+
+        return false;
+    }
+
+    result = 0;
+    retry_count = 0;
+    is_received = false;
+
+    // バージョン情報取得
+    while(retry_count < RETRY_MAX_COUNT){
+        is_received = ((result = urg3d_high_blocking_get_sensor_version(&urg_, &version_)) >= 0);
+        if(is_received == true){
+            break;
+        }
+        retry_count++;
+    }
+    if(is_received == false){
+        RCLCPP_ERROR(get_logger(), "Could not init library");
         disconnect();
 
         return false;

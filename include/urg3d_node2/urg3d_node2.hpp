@@ -147,6 +147,14 @@ private:
   bool connect(void);
   
   /**
+   * @brief センサ接続時の初期化
+   * @details urg3dライブラリの各種初期化処理を行う
+   * @retval true 成功
+   * @retval false 失敗
+   */
+  bool sensor_init(void);
+
+  /**
    * @brief スキャン設定
    * @details 受信用のデータ領域確保やLiDARに対してスキャンの設定を行う
    */
