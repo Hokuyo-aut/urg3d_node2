@@ -189,7 +189,7 @@ private:
   bool create_scan_message2(sensor_msgs::msg::PointCloud2 & msg);
 
   /**
-   * @brief スキャントピック作成(Diagnostic)
+   * @brief スキャントピック作成(auxiliary)
    * @details LiDARから取得した補助データ情報のトピックへの変換を行う
    * @retval true 正常終了
    * @retval false 取得失敗

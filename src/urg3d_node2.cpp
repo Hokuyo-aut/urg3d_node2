@@ -510,6 +510,10 @@ void Urg3dNode2::scan_thread()
                         rclcpp::sleep_for(10ms);;
                     }
                 }
+                else{
+                    //error_count_++;
+                    //total_error_count_++;
+                }
             }
 
             // エラーカウント判定
@@ -579,7 +583,7 @@ bool Urg3dNode2::create_scan_message2(sensor_msgs::msg::PointCloud2 & msg)
     return true;
 }
 
-// スキャントピック作成(Diagnostic)
+// スキャントピック作成(auxiliary)
 bool Urg3dNode2::create_auxiliary_message(sensor_msgs::msg::Imu & imu, sensor_msgs::msg::MagneticField & mag, sensor_msgs::msg::Temperature & temp)
 {
     imu.header.frame_id = frame_id_;
@@ -715,6 +719,10 @@ void Urg3dNode2::populate_diagnostics_status(diagnostic_updater::DiagnosticStatu
     status.add("Scan Retrieve Error Count", error_count_);
     status.add("Scan Retrieve Total Error Count", total_error_count_);
     status.add("Reconnection Count", reconnect_count_);
+
+    if(publish_auxiliary_){
+        status.add("Temperature", temp_.temperature);
+    }
 }
 
 // スキャンスレッドの開始
