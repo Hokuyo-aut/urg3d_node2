@@ -544,7 +544,8 @@ void Urg3dNode2::scan_thread()
                     if(prev_frame_ != -1){
                         // データ格納
                         if(create_scan_message2(cloud2_)){
-                            ;
+                        //if(1){
+                                ;
                         }
                         else{
                             RCLCPP_WARN(get_logger(), "Could not get scan.");
@@ -646,26 +647,36 @@ bool Urg3dNode2::create_scan_message2(sensor_msgs::msg::PointCloud2 & msg)
         msg.width = 0;
     }
 
+    // ポイント数を調べる
+    int point_count = 0;
+    for(int spot = 0; spot < measurement_data_.spot_count; ++spot){
+        for(int echo = 0; echo < measurement_data_.spots[spot].echo_count; ++echo){
+            if(measurement_data_.spots[spot].polar[0].range_m < range_min_){
+                continue;
+            }
+            point_count++;
+        }
+    }
+
     // PointCloud2データ格納
-    msg.data.resize((msg.width + measurement_data_.spot_count) * msg.point_step);
+    msg.data.resize((msg.width + point_count) * msg.point_step);
 
     float* data = reinterpret_cast<float*>(&cloud2_.data[0]);
     data += cloud2_.width * cloud2_.point_step / sizeof(float);
 
     for(int spot = 0; spot < measurement_data_.spot_count; ++spot){
         for(int echo = 0; echo < measurement_data_.spots[spot].echo_count; ++echo){
-            if(measurement_data_.spots[spot].polar[echo].range_m < range_min_){
+            if(measurement_data_.spots[spot].polar[0].range_m < range_min_){
                 continue;
             }
 
-            *(data++) = measurement_data_.spots[spot].point[echo].x_m;
-            *(data++) = measurement_data_.spots[spot].point[echo].y_m;
-            *(data++) = measurement_data_.spots[spot].point[echo].z_m;
-            *(data++) = measurement_data_.spots[spot].point[echo].intensity;
+            *(data++) = measurement_data_.spots[spot].point[0].x_m;
+            *(data++) = measurement_data_.spots[spot].point[0].y_m;
+            *(data++) = measurement_data_.spots[spot].point[0].z_m;
+            *(data++) = measurement_data_.spots[spot].point[0].intensity;
 
-            
-        }
-        msg.width++;
+            msg.width++;
+        }     
     }
     msg.row_step = msg.width * msg.point_step;
 
