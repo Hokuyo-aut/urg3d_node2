@@ -153,12 +153,6 @@ private:
    * @retval false 失敗
    */
   bool sensor_init(void);
-
-  /**
-   * @brief スキャン設定
-   * @details 受信用のデータ領域確保やLiDARに対してスキャンの設定を行う
-   */
-  void set_scan_parameter(void);
   
   /**
    * @brief LiDAR切断
@@ -177,15 +171,6 @@ private:
    * @details LiDARからスキャンデータを受信しトピックとして配信を行う
    */
   void scan_thread(void);
-  
-  /**
-   * @brief スキャントピック作成(PointCloud型)
-   * @details LiDARから取得したスキャン情報のトピックへの変換を行う
-   * @param[out] msg スキャンデータメッセージ
-   * @retval true 正常終了
-   * @retval false 取得失敗
-   */
-  bool create_scan_message(sensor_msgs::msg::PointCloud & msg);
   
   /**
    * @brief スキャントピック作成(PointCloud2型)
@@ -284,7 +269,6 @@ private:
   sensor_msgs::msg::Temperature temp_;
   
   /** スキャンデータのpublisher */
-  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud>> scan_pub_1;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>> scan_pub_2;
 
   /** 補助データのpublisher */
@@ -417,12 +401,7 @@ private:
   const double adj_alpha_ = 0.01;
   /** 同期モード用変数 */
   int adj_count_;
-  
-  // !!!いらないかも
-  /** スキャンデータ受信領域 */
-  std::vector<long> distance_;
-  /** 強度データ受信領域 */
-  std::vector<unsigned short> intensity_;
+
 };
 
 }

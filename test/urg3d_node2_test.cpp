@@ -138,7 +138,7 @@ TEST(YVT_30LX, normal_scan) {
     scan_wait(exe1, 1.0);
     
     // compare
-    // ���C�u�����̎d�l�𒲂ׂă`�F�b�N���ڂ����߂�
+    // 
     
     bool flag_nan = false;
     // !!! need fix

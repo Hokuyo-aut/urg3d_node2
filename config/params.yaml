@@ -6,7 +6,7 @@ urg3d_node2:
     range_min: 0.1
     interlace_h: 1
     interlace_v: 1
-    output_cycle: 'field'
+    output_cycle: 'frame'
     publish_intensity: true
     publish_auxiliary: true
     calibrate_time : false

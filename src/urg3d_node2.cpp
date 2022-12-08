@@ -70,7 +70,6 @@ Urg3dNode2::CallbackReturn Urg3dNode2::on_configure(const rclcpp_lifecycle::Stat
     }
 
     // Publisher設定
-    //scan_pub_1 = create_publisher<sensor_msgs::msg::PointCloud>("hokuyo_cloud", rclcpp::QoS(20));
     scan_pub_2 = create_publisher<sensor_msgs::msg::PointCloud2>("hokuyo_cloud2", rclcpp::QoS(20));
     imu_pub_ = create_publisher<sensor_msgs::msg::Imu>("imu", rclcpp::QoS(20));
     mag_pub_ = create_publisher<sensor_msgs::msg::MagneticField>("mag", rclcpp::QoS(20));
@@ -92,9 +91,6 @@ Urg3dNode2::CallbackReturn Urg3dNode2::on_activate(const rclcpp_lifecycle::State
     }
     else{
         // publisherの有効化
-        //if(scan_pub_1){
-        //    scan_pub_1->on_activate();
-        //}
         if(scan_pub_2){
             scan_pub_2->on_activate();
         }
@@ -142,7 +138,6 @@ Urg3dNode2::CallbackReturn Urg3dNode2::on_cleanup(const rclcpp_lifecycle::State 
     stop_thread();
 
     // publisherの解放
-    //scan_pub_1.reset();
     scan_pub_2.reset();
     imu_pub_.reset();
     mag_pub_.reset();
@@ -166,7 +161,6 @@ Urg3dNode2::CallbackReturn Urg3dNode2::on_shutdown(const rclcpp_lifecycle::State
     stop_diagnostics();
 
     // publisherの解放
-    //scan_pub_1.reset();
     scan_pub_2.reset();
     imu_pub_.reset();
     mag_pub_.reset();
@@ -190,7 +184,6 @@ Urg3dNode2::CallbackReturn Urg3dNode2::on_error(const rclcpp_lifecycle::State & 
     stop_diagnostics();
 
     // publisherの解放
-    //scan_pub_1.reset();
     scan_pub_2.reset();
     imu_pub_.reset();
     mag_pub_.reset();
@@ -293,7 +286,6 @@ bool Urg3dNode2::connect()
     std::stringstream ss;
     ss << "Connected to a newtork";
     ss << "scan. Hardware ID: " << device_id_;
-    //ss << ", version:" << vendor_name_ << "," << product_name_ << "," << device_id_ << "," << firmware_version_ << "," << protocol_name_ << ",";
     RCLCPP_INFO(get_logger(), "%s", ss.str().c_str());
 
     // インターレース設定
@@ -411,12 +403,6 @@ bool Urg3dNode2::sensor_init()
     return true;
 }
 
-// スキャン設定
-void Urg3dNode2::set_scan_parameter()
-{
-    
-}
-
 // Lidarとの切断処理
 void Urg3dNode2::disconnect()
 {
@@ -437,12 +423,10 @@ void Urg3dNode2::reconnect()
 // scanスレッド
 void Urg3dNode2::scan_thread()
 {
-    RCLCPP_ERROR(get_logger(), "start thread.");
+    RCLCPP_INFO(get_logger(), "start thread.");
 
     int result = 0;
     reconnect_count_ = 0;
-
-    int ugulu = 0;
 
     while(!close_thread_){
 
@@ -452,28 +436,11 @@ void Urg3dNode2::scan_thread()
                 continue;
             }
         }
-        
-        // Inactive状態判定
-        rclcpp_lifecycle::State state = get_current_state();
-        if(state.label() == "inactive"){
-            // 再接続処理
-            //reconnect();
-            //reconnect_count_++;
-
-            //rclcpp::sleep_for(100ms);
-            //continue;
-        }
-        
-        // スキャン設定
-        set_scan_parameter();
 
         // 調整モード
         if (calibrate_time_) {
             calibrate_system_latency(URG_NODE2_CALIBRATION_MEASUREMENT_TIME);
         }
-
-        // LiDAR状態更新
-        // !!!追加を検討 
 
         // 補助データ配信
         if(publish_auxiliary_ == true){
@@ -544,8 +511,7 @@ void Urg3dNode2::scan_thread()
                     if(prev_frame_ != -1){
                         // データ格納
                         if(create_scan_message2(cloud2_)){
-                        //if(1){
-                                ;
+                            ;
                         }
                         else{
                             RCLCPP_WARN(get_logger(), "Could not get scan.");
@@ -630,19 +596,13 @@ void Urg3dNode2::scan_thread()
     disconnect();
 }
 
-// スキャントピック作成(PointCloud型)
-bool Urg3dNode2::create_scan_message(sensor_msgs::msg::PointCloud & msg)
-{
-    return true;
-}
-
 // スキャントピック作成(PointCloud2型)
 bool Urg3dNode2::create_scan_message2(sensor_msgs::msg::PointCloud2 & msg)
 {
     if(msg.data.size() == 0){
         // PointCloud2 メッセージ初期化
         msg.header.frame_id = frame_id_;
-        //msg.header.stamp = rclcpp::Duration(0);
+        msg.header.stamp = rclcpp::Time(measurement_data_.timestamp_ms);
         msg.row_step = 0;
         msg.width = 0;
     }
@@ -801,9 +761,6 @@ void Urg3dNode2::populate_diagnostics_status(diagnostic_updater::DiagnosticStatu
     if (!is_measurement_started_) {
         diagnostic_msgs::msg::DiagnosticStatus::ERROR, "Not started: ";
     }
-    //else if(){
-    //
-    //}
     else{
         status.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Streaming");
     }
