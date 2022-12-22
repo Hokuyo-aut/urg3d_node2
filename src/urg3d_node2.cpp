@@ -520,8 +520,8 @@ void Urg3dNode2::scan_thread()
                         }
                         
                         // 条件を満たした際にpublishする
-                        if((cycle_ == CYCLE_FIELD && (prev_frame_ != measurement_data_.frame_number)) ||
-                            (cycle_ == CYCLE_FRAME && (measurement_data_.line_number == 0)) ||
+                        if((cycle_ == CYCLE_FRAME && (prev_frame_ != measurement_data_.frame_number)) ||
+                            (cycle_ == CYCLE_FIELD && (measurement_data_.line_number == 0)) ||
                             (cycle_ == CYCLE_LINE)){
   
                             RCLCPP_DEBUG(get_logger(), "publish data.");
@@ -807,10 +807,10 @@ void Urg3dNode2::start_diagnostics(void)
     diagnostic_updater_->add("Hardware Status", this, &Urg3dNode2::populate_diagnostics_status);
 
     // Diagnosticsトピック設定
-    if(cycle_ == CYCLE_FIELD){
+    if(cycle_ == CYCLE_FRAME){
         diagnostics_freq_ = 1.0 / scan_period_ / interlace_h_ / interlace_v_;
     }
-    else if(cycle_ == CYCLE_FRAME){
+    else if(cycle_ == CYCLE_FIELD){
         diagnostics_freq_ = 1.0 / scan_period_;
     }
     else if(cycle_ == CYCLE_LINE){
