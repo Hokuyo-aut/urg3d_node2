@@ -17,15 +17,15 @@ The operation in each state of the life cycle is as follows
 - Unconfigured  
   startup state
 - Inactive  
-  LiDAR connection state（not delivered scanning data and diagnostic information）
+  LiDAR connection state (not delivered scanning data and diagnostic information)
 - Active  
-  LiDAR data delivery state（delivered scanning data and diagnostic information）
+  LiDAR data delivery state (delivered scanning data and diagnostic information)
 - Finalized  
   end state
 
 # Supported models
 Hokuyo's VSSP 2.1-compliant LiDAR
-Tested models：`YVT-35LX-F0`, `YVT-35LX-FK`
+Tested models: `YVT-35LX-F0`, `YVT-35LX-FK`
 
 Tested Environment：`foxy`, `galactic`
 
@@ -47,7 +47,7 @@ The urg3d_library is licensed under the `Simplified BSD License`.
 
 # Parameters
 - ip_address (string, default: "192.168.0.10")  
-  IP address for Ethernet connection（Specify in the format "XX.XX.XX.XX.XX"）  
+  IP address for Ethernet connection (Specify in the format "XX.XX.XX.XX.XX") 
 - ip_port (int, default: 10940)  
   Port number for Ethernet connection
 - frame_id (string, default: "hokuyo3d")  
@@ -142,7 +142,7 @@ $ colcon test
    $ ros2 launch urg_node2 urg_node2.launch.py auto_start:=false
    ```
 
-   In `urg_node2.launch.py`, urg_node2 is launched as a standalone lifecycle node (not as a component). This is because there is no lifecycle control interface in launch when launched as a component and lifecycle node (not implemented in ROS2 at this time).
+   In `urg3d_node2.launch.py`, urg3d_node2 is launched as a standalone lifecycle node (not as a component). This is because there is no lifecycle control interface in launch when launched as a component and lifecycle node (not implemented in ROS2 at this time).
 
 ## Parameter Change
 
@@ -151,12 +151,12 @@ To change the parameters, perform the following steps.
 1. Node Termination
    \<Ctrl-C\> to terminate the node.
 1. Reset parameters  
-   Edit the parameter file you are using (e.g. config/params_ether.yaml).
+   Edit the parameter file you are using (e.g. config/params.yaml).
 1. Restarting a node  
    Start the node with the following command
 
    ```
-   $ ros2 launch urg_node2 urg_node2.launch.py
+   $ ros2 launch urg3d_node2 urg3d_node2.launch.py
    ```
 
 ## Reset in case of abnormality
@@ -171,7 +171,7 @@ If you encounter abnormalities, such as no scan data being delivered, please fol
    Start the node with the following command
 
    ```
-   $ ros2 launch urg_node2 urg_node2.launch.py
+   $ ros2 launch urg3d_node2 urg3d_node2.launch.py
    ```
 
 # Restrictions

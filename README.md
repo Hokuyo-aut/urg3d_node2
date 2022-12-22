@@ -17,17 +17,17 @@ The operation in each state of the life cycle is as follows
 - Unconfigured  
   startup state
 - Inactive  
-  LiDAR connection state（not delivered scanning data and diagnostic information）
+  LiDAR connection state (not delivered scanning data and diagnostic information)
 - Active  
-  LiDAR data delivery state（delivered scanning data and diagnostic information）
+  LiDAR data delivery state (delivered scanning data and diagnostic information)
 - Finalized  
   end state
 
 # Supported models
 Hokuyo's VSSP 2.1-compliant LiDAR
-Tested models：`YVT-35LX-F0`, `YVT-35LX-FK`
+Tested models: `YVT-35LX-F0`, `YVT-35LX-FK`
 
-Tested Environment：`foxy`, `galactic`
+Tested Environment: `foxy`, `galactic`
 
 # License
 `Apache License 2.0`
@@ -47,7 +47,7 @@ The urg3d_library is licensed under the `Simplified BSD License`.
 
 # Parameters
 - ip_address (string, default: "192.168.0.10")  
-  IP address for Ethernet connection（Specify in the format "XX.XX.XX.XX.XX"）  
+  IP address for Ethernet connection (Specify in the format "XX.XX.XX.XX.XX") 
 - ip_port (int, default: 10940)  
   Port number for Ethernet connection
 - frame_id (string, default: "hokuyo3d")  
