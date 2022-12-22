@@ -27,7 +27,7 @@ The operation in each state of the life cycle is as follows
 Hokuyo's VSSP 2.1-compliant LiDAR
 Tested models: `YVT-35LX-F0`, `YVT-35LX-FK`
 
-Tested EnvironmentÅF`foxy`, `galactic`
+Tested Environment: `foxy`, `galactic`
 
 # License
 `Apache License 2.0`

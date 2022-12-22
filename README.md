@@ -80,10 +80,10 @@ The urg3d_library is licensed under the `Simplified BSD License`.
 - error_reset_period (double, default: 10.0 [sec])  
   Error reset cycle 
   Periodically resets the number of errors that occurred during data acquisition.  
-  Å¶To prevent reconnection in case of sporadic errors
+  * To prevent reconnection in case of sporadic errors
 - diagnostics_tolerance (double, default: 0.05)  
   Allowable percentage of diagnostic information on frequency of scan data delivery relative to target delivery frequency  
-  Å¶For example, if diagnostics_tolerance is 0.05, the normal range is 105% to 95% of the target delivery frequency.
+  * For example, if diagnostics_tolerance is 0.05, the normal range is 105% to 95% of the target delivery frequency.
 - diagnostics_window_time (double, default: 5.0 [sec])  
   Period to measure the frequency of output delivery of diagnostic information on the frequency of scan data delivery.
 - time_offset (double, default: 0.0 [sec])  
