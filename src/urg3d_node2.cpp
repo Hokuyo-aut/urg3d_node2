@@ -33,16 +33,16 @@ Urg3dNode2::Urg3dNode2(const rclcpp::NodeOptions & node_options)
   std::signal(SIGPIPE, SIG_IGN);
   
   // パラメータの登録
-  ip_address_ = declare_parameter<std::string>("ip_address", "");
+  ip_address_ = declare_parameter<std::string>("ip_address", "192.168.0.10");
   ip_port_ = declare_parameter<int>("ip_port", 10940);
   frame_id_ = declare_parameter<std::string>("frame_id", "hokuyo3d");
-  range_min_ = declare_parameter<double>("range_min", 0.0);
+  range_min_ = declare_parameter<double>("range_min", 0.1);
   interlace_h_ = declare_parameter<int>("interlace_h", 1);
   interlace_v_ = declare_parameter<int>("interlace_v", 1);
-  output_cycle_ = declare_parameter<std::string>("output_cycle", "field");
+  output_cycle_ = declare_parameter<std::string>("output_cycle", "frame");
   calibrate_time_ = declare_parameter<bool>("calibrate_time", false);
   synchronize_time_ = declare_parameter<bool>("synchronize_time", false);
-  publish_intensity_ = declare_parameter<bool>("publish_intensity", false);
+  publish_intensity_ = declare_parameter<bool>("publish_intensity", true);
   publish_auxiliary_ = declare_parameter<bool>("publish_auxiliary", false);
   error_limit_ = declare_parameter<int>("error_limit", 4);
   error_reset_period_ = declare_parameter<double>("error_reset_period", 10.0),
