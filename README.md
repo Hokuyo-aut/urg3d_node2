@@ -54,13 +54,13 @@ The urg3d_library is licensed under the `Simplified BSD License`.
   Frame_id of scanning data
   The parameter `frame_id` is set in the message header "frame_id" of the scan data.
 - range_min (double, default: 0.1)
-  
+  Points within range_min are dropped. This parameter is useful to remove ghost points nearby.
 - interlace_h (int, default: 1)
-
+  Interlace(horizontal) setting of laser scanning. One means no interlace.
 - interlace_v (int, default: 1)
-
+  Interlace(vertical) setting of laser scanning. One means no interlace.
 - output_cycle (string, default: "frame")
-
+  Specifies timing of point cloud output. "frame": outputs for each interlace cycle (several fields), "field": one horizontal scan (tens of lines), "line": one vertical scan
 - calibrate_time (bool, default: false)  
   Adjustment mode flags
   If this flag is true, the discrepancy between the LiDAR time and the system time is measured at the start of the scan and added to the timestamp of the scan data as latency.
