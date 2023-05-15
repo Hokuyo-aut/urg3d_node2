@@ -29,7 +29,6 @@ rclcpp::Clock system_clock(RCL_SYSTEM_TIME);
 rclcpp::Time scan_time;
 
 // single scan callback
-sensor_msgs::msg::PointCloud hokuyo_cloud;
 sensor_msgs::msg::PointCloud2 hokuyo_cloud2;
 void scan_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
 {
@@ -69,7 +68,6 @@ void scan_wait(
 TEST(YVT_30LX, normal_scan) {
 
     // initialize
-    hokuyo_cloud = sensor_msgs::msg::PointCloud();
     hokuyo_cloud2 = sensor_msgs::msg::PointCloud2();
     scan_flag = false;
     receive_count = 0;
@@ -92,9 +90,6 @@ TEST(YVT_30LX, normal_scan) {
     
     // subscriber test node setup
     auto sub_node1 = rclcpp::Node::make_shared("test_subscription");
-    auto subscriber1 = sub_node1->create_subscription<sensor_msgs::msg::PointCloud>(
-        "hokuyo_cloud", 10, 
-        scan_callback);
     auto sub_node2 = rclcpp::Node::make_shared("test_subscription");
     auto subscriber2 = sub_node2->create_subscription<sensor_msgs::msg::PointCloud2>(
         "hokuyo_cloud2", 10, 
