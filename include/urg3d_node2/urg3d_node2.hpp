@@ -20,7 +20,7 @@
  #ifndef URG3D_NODE2_HPP
  #define URG3D_NODE2_HPP
 
- #include <chrono>
+#include <chrono>
 #include <string>
 #include <sstream>
 #include <utility>
@@ -47,6 +47,8 @@
 #include "diagnostic_msgs/msg/diagnostic_status.hpp"
 
 #include "urg3d_sensor.h"
+
+#define MODE_LIO (0) // Modified version for Lidar odometory.
 
 using namespace std::chrono_literals;
 
@@ -187,7 +189,7 @@ private:
    * @retval true 正常終了
    * @retval false 取得失敗
   */
-  bool create_auxiliary_message(sensor_msgs::msg::Imu & imu, sensor_msgs::msg::MagneticField & mag, sensor_msgs::msg::Temperature & temp);
+  bool create_auxiliary_message();
   
   /**
    * @brief システムレイテンシの計算
@@ -261,12 +263,12 @@ private:
 
   /** PointCloud2データ */
   sensor_msgs::msg::PointCloud2 cloud2_;
-  /** IMUデータ */
-  sensor_msgs::msg::Imu imu_;
-  /** MagneticFieldデータ */
-  sensor_msgs::msg::MagneticField mag_;
-  /** Temperatureデータ */
-  sensor_msgs::msg::Temperature temp_;
+
+  // YVT sensor sends 10 imu data at once.
+  sensor_msgs::msg::Imu imu_array_[10];           // IMU (gyro and accerelometer.
+  sensor_msgs::msg::MagneticField mag_array_[10]; // Magnetic field ( MPU-6200 does not have this )
+  sensor_msgs::msg::Temperature temp_array_[10];  // tempreerature
+  int imu_array_cnt_;
   
   /** スキャンデータのpublisher */
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>> scan_pub_2;
