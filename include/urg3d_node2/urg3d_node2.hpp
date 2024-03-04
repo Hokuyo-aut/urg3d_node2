@@ -189,7 +189,7 @@ private:
    * @retval true 正常終了
    * @retval false 取得失敗
   */
-  bool create_auxiliary_message(sensor_msgs::msg::Imu & imu, sensor_msgs::msg::MagneticField & mag, sensor_msgs::msg::Temperature & temp);
+  bool create_auxiliary_message();
   
   /**
    * @brief システムレイテンシの計算
@@ -263,20 +263,12 @@ private:
 
   /** PointCloud2データ */
   sensor_msgs::msg::PointCloud2 cloud2_;
-  /** IMUデータ */
-  sensor_msgs::msg::Imu imu_;
-  /** MagneticFieldデータ */
-  sensor_msgs::msg::MagneticField mag_;
-  /** Temperatureデータ */
-  sensor_msgs::msg::Temperature temp_;
-#if MODE_LIO
-  // YVT sensor sends 10 imu data at once.
-  sensor_msgs::msg::Imu imu_array_[10];
-  sensor_msgs::msg::MagneticField mag_array_[10];
-  sensor_msgs::msg::Temperature temp_array_[10];
-  int imu_array_cnt_;
-#endif
 
+  // YVT sensor sends 10 imu data at once.
+  sensor_msgs::msg::Imu imu_array_[10];           // IMU (gyro and accerelometer.
+  sensor_msgs::msg::MagneticField mag_array_[10]; // Magnetic field ( MPU-6200 does not have this )
+  sensor_msgs::msg::Temperature temp_array_[10];  // tempreerature
+  int imu_array_cnt_;
   
   /** スキャンデータのpublisher */
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>> scan_pub_2;

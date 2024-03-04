@@ -539,19 +539,13 @@ void Urg3dNode2::scan_thread()
                     }
                 }
                 else if(urg3d_high_get_auxiliary_data(&urg_, &auxiliary_data_) > 0) {
-                    if(create_auxiliary_message(imu_, mag_, temp_)){
+                    if(create_auxiliary_message()){
                         RCLCPP_DEBUG(get_logger(), "publish auxiliary.");
-#if MODE_LIO
                         for (int i=0; i<imu_array_cnt_; i++ ) {
                             imu_pub_->publish(imu_array_[i]);
                             mag_pub_->publish(mag_array_[i]);
                             temp_pub_->publish(temp_array_[i]);
                         }
-#else
-                        imu_pub_->publish(imu_);
-                        mag_pub_->publish(mag_);
-                        temp_pub_->publish(temp_);
-#endif
                     }
                     else{
                         RCLCPP_WARN(get_logger(), "Could not get auxiliary.");
@@ -614,7 +608,8 @@ bool Urg3dNode2::create_scan_message2(sensor_msgs::msg::PointCloud2 & msg)
     if(msg.data.size() == 0){
         // PointCloud2 メッセージ初期化
         msg.header.frame_id = frame_id_;
-        msg.header.stamp = rclcpp::Time(measurement_data_.timestamp_ms);
+        //bug?//msg.header.stamp = rclcpp::Time(measurement_data_.timestamp_ms);
+        msg.header.stamp = rclcpp::Time( static_cast<int64_t>( measurement_data_.timestamp_ms * 1e6) );
         msg.row_step = 0;
         msg.width = 0;
     }
@@ -656,21 +651,13 @@ bool Urg3dNode2::create_scan_message2(sensor_msgs::msg::PointCloud2 & msg)
 }
 
 // スキャントピック作成(auxiliary)
-bool Urg3dNode2::create_auxiliary_message(sensor_msgs::msg::Imu & imu, sensor_msgs::msg::MagneticField & mag, sensor_msgs::msg::Temperature & temp)
+bool Urg3dNode2::create_auxiliary_message(void)
 {
-#if MODE_LIO
-#else
-    imu.header.frame_id = frame_id_;
-    mag.header.frame_id = frame_id_;
-    temp.header.frame_id = frame_id_;
-#endif
-    
     int capturng_record_count = auxiliary_data_.record_count;
     if(capturng_record_count > MAXIMUM_RECORD_TIMES){
         capturng_record_count = MAXIMUM_RECORD_TIMES;
     }
 
-#if MODE_LIO
     urg3d_auxiliary_record_t* record = auxiliary_data_.records;
     int rec_cnt = auxiliary_data_.record_count;
     if ( rec_cnt > 10 ) rec_cnt = 10; // upper limit 10.
@@ -701,27 +688,6 @@ bool Urg3dNode2::create_auxiliary_message(sensor_msgs::msg::Imu & imu, sensor_ms
         temp_array_[i].temperature = (record[i].temperature / TEMPERATURE_FACTOR) + TEMPERATURE_OFFSET;
     }
     imu_array_cnt_ = rec_cnt;
-
-#else
-    int latest = auxiliary_data_.record_count - 1;
-    urg3d_auxiliary_record_t record = auxiliary_data_.records[latest];
-
-    // Imuデータ
-    imu.angular_velocity.x = record.gyro_x * GYRO_FACTOR;
-    imu.angular_velocity.y = record.gyro_y * GYRO_FACTOR;
-    imu.angular_velocity.z = record.gyro_z * GYRO_FACTOR;
-    imu.linear_acceleration.x = record.accel_x * ACCEL_FACTOR;
-    imu.linear_acceleration.y = record.accel_y * ACCEL_FACTOR;
-    imu.linear_acceleration.z = record.accel_z * ACCEL_FACTOR;
-
-    // MagneticFieldデータ
-    mag.magnetic_field.x = record.compass_x * COMPASS_FACTOR;
-    mag.magnetic_field.y = record.compass_y * COMPASS_FACTOR;
-    mag.magnetic_field.z = record.compass_z * COMPASS_FACTOR;
-
-    // Temperatureデータ
-    temp.temperature = (record.temperature / TEMPERATURE_FACTOR) + TEMPERATURE_OFFSET;
-#endif
 
     return true;
 }
@@ -828,7 +794,7 @@ void Urg3dNode2::populate_diagnostics_status(diagnostic_updater::DiagnosticStatu
     status.add("Reconnection Count", reconnect_count_);
 
     if(publish_auxiliary_){
-        status.add("Temperature", temp_.temperature);
+        status.add("Temperature", temp_array_[0].temperature);
     }
 }
 
