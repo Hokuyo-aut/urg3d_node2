@@ -39,11 +39,7 @@ Urg3dNode2::Urg3dNode2(const rclcpp::NodeOptions & node_options)
   range_min_ = declare_parameter<double>("range_min", 0.1);
   interlace_h_ = declare_parameter<int>("interlace_h", 1);
   interlace_v_ = declare_parameter<int>("interlace_v", 1);
-#if MODE_LIO
-  output_cycle_ = declare_parameter<std::string>("output_cycle", "field");
-#else
   output_cycle_ = declare_parameter<std::string>("output_cycle", "frame");
-#endif
   calibrate_time_ = declare_parameter<bool>("calibrate_time", false);
   synchronize_time_ = declare_parameter<bool>("synchronize_time", false);
   publish_intensity_ = declare_parameter<bool>("publish_intensity", true);
@@ -672,7 +668,8 @@ bool Urg3dNode2::create_auxiliary_message(void)
         mag_array_[i].header.frame_id = frame_id_;
         temp_array_[i].header.frame_id = frame_id_;
 
-        // Imuデータ
+#if MODE_LIO
+        // Imu
         imu_array_[i].angular_velocity.x = record[i].gyro_z * GYRO_FACTOR;
         imu_array_[i].angular_velocity.y = record[i].gyro_x * GYRO_FACTOR;
         imu_array_[i].angular_velocity.z = record[i].gyro_y * GYRO_FACTOR;
@@ -680,10 +677,24 @@ bool Urg3dNode2::create_auxiliary_message(void)
         imu_array_[i].linear_acceleration.y = record[i].accel_x * ACCEL_FACTOR;
         imu_array_[i].linear_acceleration.z = record[i].accel_y * ACCEL_FACTOR;
 
+        // Magnetic Field
+        mag_array_[i].magnetic_field.x = record[i].compass_z * COMPASS_FACTOR;
+        mag_array_[i].magnetic_field.y = record[i].compass_x * COMPASS_FACTOR;
+        mag_array_[i].magnetic_field.z = record[i].compass_y * COMPASS_FACTOR;
+#else
+        // Imuデータ
+        imu_array_[i].angular_velocity.x = record[i].gyro_x * GYRO_FACTOR;
+        imu_array_[i].angular_velocity.y = record[i].gyro_y * GYRO_FACTOR;
+        imu_array_[i].angular_velocity.z = record[i].gyro_z * GYRO_FACTOR;
+        imu_array_[i].linear_acceleration.x = record[i].accel_x * ACCEL_FACTOR;
+        imu_array_[i].linear_acceleration.y = record[i].accel_y * ACCEL_FACTOR;
+        imu_array_[i].linear_acceleration.z = record[i].accel_z * ACCEL_FACTOR;
+
         // MagneticFieldデータ
         mag_array_[i].magnetic_field.x = record[i].compass_z * COMPASS_FACTOR;
         mag_array_[i].magnetic_field.y = record[i].compass_x * COMPASS_FACTOR;
         mag_array_[i].magnetic_field.z = record[i].compass_y * COMPASS_FACTOR;
+#endif
 
         temp_array_[i].temperature = (record[i].temperature / TEMPERATURE_FACTOR) + TEMPERATURE_OFFSET;
     }

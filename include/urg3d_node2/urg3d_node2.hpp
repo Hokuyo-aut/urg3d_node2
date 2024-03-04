@@ -48,7 +48,7 @@
 
 #include "urg3d_sensor.h"
 
-#define MODE_LIO (1) // Modified version for Lidar odometory.
+#define MODE_LIO (0) // Modified version for Lidar odometory.
 
 using namespace std::chrono_literals;
 
