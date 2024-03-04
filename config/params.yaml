@@ -8,7 +8,7 @@ urg3d_node2:
     interlace_v: 1
     output_cycle: 'frame'
     publish_intensity: true
-    publish_auxiliary: true
+    publish_auxiliary: false
     calibrate_time : false
     synchronize_time : false
     error_limit : 4
