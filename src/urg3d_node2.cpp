@@ -39,7 +39,11 @@ Urg3dNode2::Urg3dNode2(const rclcpp::NodeOptions & node_options)
   range_min_ = declare_parameter<double>("range_min", 0.1);
   interlace_h_ = declare_parameter<int>("interlace_h", 1);
   interlace_v_ = declare_parameter<int>("interlace_v", 1);
+#if MODE_LIO
+  output_cycle_ = declare_parameter<std::string>("output_cycle", "field");
+#else
   output_cycle_ = declare_parameter<std::string>("output_cycle", "frame");
+#endif
   calibrate_time_ = declare_parameter<bool>("calibrate_time", false);
   synchronize_time_ = declare_parameter<bool>("synchronize_time", false);
   publish_intensity_ = declare_parameter<bool>("publish_intensity", true);
@@ -537,9 +541,17 @@ void Urg3dNode2::scan_thread()
                 else if(urg3d_high_get_auxiliary_data(&urg_, &auxiliary_data_) > 0) {
                     if(create_auxiliary_message(imu_, mag_, temp_)){
                         RCLCPP_DEBUG(get_logger(), "publish auxiliary.");
+#if MODE_LIO
+                        for (int i=0; i<imu_array_cnt_; i++ ) {
+                            imu_pub_->publish(imu_array_[i]);
+                            mag_pub_->publish(mag_array_[i]);
+                            temp_pub_->publish(temp_array_[i]);
+                        }
+#else
                         imu_pub_->publish(imu_);
                         mag_pub_->publish(mag_);
                         temp_pub_->publish(temp_);
+#endif
                     }
                     else{
                         RCLCPP_WARN(get_logger(), "Could not get auxiliary.");
@@ -646,14 +658,51 @@ bool Urg3dNode2::create_scan_message2(sensor_msgs::msg::PointCloud2 & msg)
 // スキャントピック作成(auxiliary)
 bool Urg3dNode2::create_auxiliary_message(sensor_msgs::msg::Imu & imu, sensor_msgs::msg::MagneticField & mag, sensor_msgs::msg::Temperature & temp)
 {
+#if MODE_LIO
+#else
     imu.header.frame_id = frame_id_;
     mag.header.frame_id = frame_id_;
     temp.header.frame_id = frame_id_;
+#endif
     
     int capturng_record_count = auxiliary_data_.record_count;
     if(capturng_record_count > MAXIMUM_RECORD_TIMES){
         capturng_record_count = MAXIMUM_RECORD_TIMES;
     }
+
+#if MODE_LIO
+    urg3d_auxiliary_record_t* record = auxiliary_data_.records;
+    int rec_cnt = auxiliary_data_.record_count;
+    if ( rec_cnt > 10 ) rec_cnt = 10; // upper limit 10.
+
+    for (int i=0; i<rec_cnt; i++ ) {
+        int64_t time_nanoseconds = static_cast<int64_t>( record[i].timestamp_ms * 1e6);
+        imu_array_[i].header.stamp  = rclcpp::Time(time_nanoseconds);
+        mag_array_[i].header.stamp  = imu_array_[i].header.stamp;
+        temp_array_[i].header.stamp = imu_array_[i].header.stamp;
+
+        imu_array_[i].header.frame_id = frame_id_;
+        mag_array_[i].header.frame_id = frame_id_;
+        temp_array_[i].header.frame_id = frame_id_;
+
+        // Imuデータ
+        imu_array_[i].angular_velocity.x = record[i].gyro_z * GYRO_FACTOR;
+        imu_array_[i].angular_velocity.y = record[i].gyro_x * GYRO_FACTOR;
+        imu_array_[i].angular_velocity.z = record[i].gyro_y * GYRO_FACTOR;
+        imu_array_[i].linear_acceleration.x = record[i].accel_z * ACCEL_FACTOR;
+        imu_array_[i].linear_acceleration.y = record[i].accel_x * ACCEL_FACTOR;
+        imu_array_[i].linear_acceleration.z = record[i].accel_y * ACCEL_FACTOR;
+
+        // MagneticFieldデータ
+        mag_array_[i].magnetic_field.x = record[i].compass_z * COMPASS_FACTOR;
+        mag_array_[i].magnetic_field.y = record[i].compass_x * COMPASS_FACTOR;
+        mag_array_[i].magnetic_field.z = record[i].compass_y * COMPASS_FACTOR;
+
+        temp_array_[i].temperature = (record[i].temperature / TEMPERATURE_FACTOR) + TEMPERATURE_OFFSET;
+    }
+    imu_array_cnt_ = rec_cnt;
+
+#else
     int latest = auxiliary_data_.record_count - 1;
     urg3d_auxiliary_record_t record = auxiliary_data_.records[latest];
 
@@ -672,6 +721,7 @@ bool Urg3dNode2::create_auxiliary_message(sensor_msgs::msg::Imu & imu, sensor_ms
 
     // Temperatureデータ
     temp.temperature = (record.temperature / TEMPERATURE_FACTOR) + TEMPERATURE_OFFSET;
+#endif
 
     return true;
 }

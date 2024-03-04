@@ -20,7 +20,7 @@
  #ifndef URG3D_NODE2_HPP
  #define URG3D_NODE2_HPP
 
- #include <chrono>
+#include <chrono>
 #include <string>
 #include <sstream>
 #include <utility>
@@ -47,6 +47,8 @@
 #include "diagnostic_msgs/msg/diagnostic_status.hpp"
 
 #include "urg3d_sensor.h"
+
+#define MODE_LIO (1) // Modified version for Lidar odometory.
 
 using namespace std::chrono_literals;
 
@@ -267,6 +269,14 @@ private:
   sensor_msgs::msg::MagneticField mag_;
   /** Temperatureデータ */
   sensor_msgs::msg::Temperature temp_;
+#if MODE_LIO
+  // YVT sensor sends 10 imu data at once.
+  sensor_msgs::msg::Imu imu_array_[10];
+  sensor_msgs::msg::MagneticField mag_array_[10];
+  sensor_msgs::msg::Temperature temp_array_[10];
+  int imu_array_cnt_;
+#endif
+
   
   /** スキャンデータのpublisher */
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>> scan_pub_2;
