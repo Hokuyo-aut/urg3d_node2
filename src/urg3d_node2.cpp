@@ -71,7 +71,7 @@ Urg3dNode2::CallbackReturn Urg3dNode2::on_configure(const rclcpp_lifecycle::Stat
 
     // Publisher設定
     scan_pub_2 = create_publisher<sensor_msgs::msg::PointCloud2>("hokuyo_cloud2", rclcpp::QoS(20));
-    imu_pub_ = create_publisher<sensor_msgs::msg::Imu>("imu", rclcpp::QoS(20));
+    imu_pub_ = create_publisher<sensor_msgs::msg::Imu>("hokuyo_imu", rclcpp::QoS(20));
     mag_pub_ = create_publisher<sensor_msgs::msg::MagneticField>("mag", rclcpp::QoS(20));
     temp_pub_ = create_publisher<sensor_msgs::msg::Temperature>("temp", rclcpp::QoS(20));
 
