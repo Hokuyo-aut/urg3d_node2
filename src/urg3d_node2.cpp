@@ -71,7 +71,7 @@ Urg3dNode2::CallbackReturn Urg3dNode2::on_configure(const rclcpp_lifecycle::Stat
 
     // Publisher設定
     scan_pub_2 = create_publisher<sensor_msgs::msg::PointCloud2>("hokuyo_cloud2", rclcpp::QoS(20));
-    imu_pub_ = create_publisher<sensor_msgs::msg::Imu>("hokuyo_imu", rclcpp::QoS(20));
+    imu_pub_ = create_publisher<sensor_msgs::msg::Imu>("imu", rclcpp::QoS(20));
     mag_pub_ = create_publisher<sensor_msgs::msg::MagneticField>("mag", rclcpp::QoS(20));
     temp_pub_ = create_publisher<sensor_msgs::msg::Temperature>("temp", rclcpp::QoS(20));
 
@@ -601,11 +601,20 @@ void Urg3dNode2::scan_thread()
 // スキャントピック作成(PointCloud2型)
 bool Urg3dNode2::create_scan_message2(sensor_msgs::msg::PointCloud2 & msg)
 {
+    rclcpp::Clock system_clock(RCL_SYSTEM_TIME);
+    rclcpp::Time system_time_stamp = system_clock.now();
+    long time_stamp = measurement_data_.timestamp_ms;
+
     if(msg.data.size() == 0){
         // PointCloud2 メッセージ初期化
         msg.header.frame_id = frame_id_;
-        //bug?//msg.header.stamp = rclcpp::Time(measurement_data_.timestamp_ms);
-        msg.header.stamp = rclcpp::Time( static_cast<int64_t>( measurement_data_.timestamp_ms * 1e6) );
+
+        // タイムスタンプ設定
+        if(synchronize_time_){
+            system_time_stamp = get_synchronized_time(time_stamp, system_time_stamp);
+        }
+        msg.header.stamp = system_time_stamp + system_latency_ + user_latency_;
+
         msg.row_step = 0;
         msg.width = 0;
     }
@@ -649,6 +658,10 @@ bool Urg3dNode2::create_scan_message2(sensor_msgs::msg::PointCloud2 & msg)
 // スキャントピック作成(auxiliary)
 bool Urg3dNode2::create_auxiliary_message(void)
 {
+    rclcpp::Clock system_clock(RCL_SYSTEM_TIME);
+    rclcpp::Time system_time_stamp = system_clock.now();
+    long time_stamp = measurement_data_.timestamp_ms;
+
     int capturng_record_count = auxiliary_data_.record_count;
     if(capturng_record_count > MAXIMUM_RECORD_TIMES){
         capturng_record_count = MAXIMUM_RECORD_TIMES;
@@ -659,10 +672,17 @@ bool Urg3dNode2::create_auxiliary_message(void)
     if ( rec_cnt > 10 ) rec_cnt = 10; // upper limit 10.
 
     for (int i=0; i<rec_cnt; i++ ) {
+
+        // タイムスタンプ設定
+        if(synchronize_time_){
+            system_time_stamp = get_synchronized_time(time_stamp, system_time_stamp);
+        }
+        rclcpp::Time aux_time = system_time_stamp + system_latency_ + user_latency_;
+
         int64_t time_nanoseconds = static_cast<int64_t>( record[i].timestamp_ms * 1e6);
-        imu_array_[i].header.stamp  = rclcpp::Time(time_nanoseconds);
-        mag_array_[i].header.stamp  = imu_array_[i].header.stamp;
-        temp_array_[i].header.stamp = imu_array_[i].header.stamp;
+        imu_array_[i].header.stamp  = aux_time;
+        mag_array_[i].header.stamp  = aux_time;
+        temp_array_[i].header.stamp = aux_time;
 
         imu_array_[i].header.frame_id = frame_id_;
         mag_array_[i].header.frame_id = frame_id_;
@@ -751,7 +771,34 @@ void Urg3dNode2::calibrate_system_latency(size_t num_measurements)
 // ROS時刻とLiDAR時刻の差の計算
 rclcpp::Duration Urg3dNode2::get_native_clock_offset(size_t num_measurements)
 {
-    return rclcpp::Duration::from_seconds(0);
+  // すでに計測開始されていた場合エラー
+  if (is_measurement_started_) {
+    std::stringstream ss;
+    ss << "Cannot get native clock offset while started.";
+    throw std::runtime_error(ss.str());
+  }
+
+  std::vector<rclcpp::Duration> time_offsets;
+  for (size_t i = 0; i < num_measurements; i++) {
+    // chronoライブラリでLiDAR時刻取得直前の時刻を取得
+    rclcpp::Time request_time(std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count());
+    // LiDARから時刻を取得
+    rclcpp::Time lidar_time( static_cast<int64_t>( measurement_data_.timestamp_ms * 1e6) );
+    // LiDAR時刻取得後の時刻を取得
+    rclcpp::Time response_time(std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count());
+    // 直前時刻と直後時刻の平均値を取得時刻とみなす
+    rclcpp::Time average_time((response_time.nanoseconds() + request_time.nanoseconds()) / 2.0);
+    // chronoライブラリで取得した時刻とLiDAR時刻との差を格納
+    time_offsets.push_back(lidar_time - average_time);
+  }
+
+  // 格納した差をソートし中央値を返す
+  std::nth_element(
+    time_offsets.begin(),
+    time_offsets.begin() + time_offsets.size() / 2, time_offsets.end());
+  return time_offsets[time_offsets.size() / 2];
 }
 
 // システム時刻とLiDAR時刻の差の計算
@@ -763,9 +810,36 @@ rclcpp::Duration Urg3dNode2::get_time_stamp_offset(size_t num_measurements)
 // 指数移動平均による動的補正
 rclcpp::Time Urg3dNode2::get_synchronized_time(long time_stamp, rclcpp::Time system_time_stamp)
 {
-    rclcpp::Clock system_clock(RCL_SYSTEM_TIME);
-    rclcpp::Time now = system_clock.now();
-    return now;
+  rclcpp::Time stamp = system_time_stamp;
+
+  const uint32_t t1 = static_cast<uint32_t>(time_stamp);
+  const uint32_t t0 = static_cast<uint32_t>(last_hardware_time_stamp_);
+  const uint32_t mask = 0x00ffffff;
+  double delta = static_cast<double>(mask & (t1 - t0)) / 1000.0;
+  hardware_clock_ += delta;
+  double cur_adj = stamp.seconds() - hardware_clock_;
+  if (adj_count_ > 0) {
+    hardware_clock_adj_ = adj_alpha_ * cur_adj + (1.0 - adj_alpha_) * hardware_clock_adj_;
+  } else {
+    // 指数移動平均の初期化
+    hardware_clock_adj_ = cur_adj;
+  }
+  adj_count_++;
+  last_hardware_time_stamp_ = time_stamp;
+
+  // ズレのチェック
+  if (adj_count_ > 100) {
+    stamp = rclcpp::Time((hardware_clock_ + hardware_clock_adj_) * 1e9);
+    // ズレが大きすぎると指数移動平均の初期化
+    if (fabs((stamp - system_time_stamp).seconds()) > 0.1) {
+      adj_count_ = 0;
+      hardware_clock_ = 0.0;
+      last_hardware_time_stamp_ = 0;
+      stamp = system_time_stamp;
+      RCLCPP_WARN(get_logger(), "%s: detected clock warp, reset EMA", __func__);
+    }
+  }
+  return stamp;
 }
 
 // 接続先LiDARが強度出力に対応しているかどうか
