@@ -27,7 +27,7 @@ The operation in each state of the life cycle is as follows
 Hokuyo's VSSP 2.1-compliant LiDAR
 Tested models: `YVT-35LX-F0`, `YVT-35LX-FK`
 
-Tested Environment: `foxy`, `galactic`
+Tested Environment: `foxy`, `galactic`, `humble`
 
 # License
 `Apache License 2.0`
@@ -95,7 +95,7 @@ The urg3d_library is licensed under the `Simplified BSD License`.
 
 ```
 $ cd <ROS2_workspace>/src
-$ git clone --recursive https://github.com/UrgNetworks/urg3d_node2.git
+$ git clone --recursive https://github.com/Hokuyo-aut/urg3d_node2
 ```
 
 2. Installing Related Packages

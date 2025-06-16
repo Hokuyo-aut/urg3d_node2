@@ -27,7 +27,7 @@ LiDARとの通信には[urg3d_library](https://github.com/UrgNetwork/urg3d_libra
 北陽電機製のVSSP 2.1に対応した測域センサ  
 動作確認済み機種：`YVT-35LX-F0`, `YVT-35LX-FK`
 
-動作確認済み環境：`foxy`, `galactic`
+動作確認済み環境：`foxy`, `galactic`, `humble`
 
 # ライセンス
 本パッケージのライセンスは`Apache License 2.0`です。  
@@ -96,7 +96,7 @@ urg_libray C言語APIのライセンスは`Simplified BSD License`です。
 
 ```
 $ cd <ROS2_workspace>/src
-$ git clone --recursive https://github.com/UrgNetworks/urg3d_node2.git
+$ git clone --recursive https://github.com/Hokuyo-aut/urg3d_node2
 ```
 
 2. 関連パッケージのインストール
