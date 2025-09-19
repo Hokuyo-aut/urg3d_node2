@@ -26,7 +26,8 @@ Urg3dNode2::Urg3dNode2(const rclcpp::NodeOptions & node_options)
   is_stable_(false),
   use_intensity_(false),
   system_latency_(0ns),
-  user_latency_(0ns)
+  user_latency_(0ns),
+  urg(Urg3dSensor::TCP)
 {
   // urg_open後にLiDARの電源がOFFになった状態でLiDARと通信しようとするとSIGPIPEシグナルが発生する
   // ROS1ではROSのライブラリで設定されていたがROS2では未対応のため、ここで設定する
@@ -261,10 +262,12 @@ void Urg3dNode2::initialize()
 // Lidarとの接続処理
 bool Urg3dNode2::connect()
 {
-    int result = urg3d_open(&urg_, ip_address_.c_str(), ip_port_);
+    //Urg3dSensor urg(Urg3dSensor::TCP);
+
+    int result = urg.open(ip_address_.c_str(), ip_port_);
     if(result < 0){
-        RCLCPP_ERROR(get_logger(), "Could not open network Hokuyo 3D LiDAR\n%s:%d\n%s",
-        ip_address_.c_str(), ip_port_, &urg_.last_errno);
+        RCLCPP_ERROR(get_logger(), "Could not open network Hokuyo 3D LiDAR\n%s:%d\n",
+        ip_address_.c_str(), ip_port_);
 
       return false;
     }
@@ -272,7 +275,7 @@ bool Urg3dNode2::connect()
     is_connected_ = true;
 
     // タイムアウト指定(2000ms)
-    urg3d_high_set_blocking_timeout_ms(&urg_, 2000);
+    urg.highSetBlockingTimeoutMs(2000);
 
     sensor_init();
 
@@ -289,14 +292,14 @@ bool Urg3dNode2::connect()
     RCLCPP_INFO(get_logger(), "%s", ss.str().c_str());
 
     // インターレース設定
-    result = urg3d_high_blocking_set_horizontal_interlace_count(&urg_, interlace_h_);
+    result = urg.highBlockingSetMotorInterlaceCount(interlace_h_);
     if(result < 0){
         RCLCPP_ERROR(get_logger(), "Could not setting.");
         disconnect();
 
         return false;
     }
-    result = urg3d_high_blocking_set_vertical_interlace_count(&urg_, interlace_v_);
+    result = urg.highBlockingSetRemInterlaceCount(interlace_v_);
     if(result < 0){
         RCLCPP_ERROR(get_logger(), "Could not setting.");
         disconnect();
@@ -318,13 +321,13 @@ bool Urg3dNode2::sensor_init()
 
     // データ通信を止める
     while(retry_count < RETRY_MAX_COUNT){
-        is_received = ((result = urg3d_high_stop_data(&urg_, URG3D_DISTANCE)) >= 0);
+        is_received = ((result = urg.highStopData(URG3D_DISTANCE)) >= 0);
         if(is_received == true){
             result = 0;
-            is_received = ((result = urg3d_high_stop_data(&urg_, URG3D_DISTANCE_INTENSITY)) >= 0);
+            is_received = ((result = urg.highStopData(URG3D_DISTANCE_INTENSITY)) >= 0);
             if(is_received == true){
                 result = 0;
-                is_received = ((result = urg3d_high_stop_data(&urg_, URG3D_AUXILIARY)) >= 0);
+                is_received = ((result = urg.highStopData(URG3D_AUXILIARY)) >= 0);
                 if(is_received == true){
                     break;
                 }
@@ -341,7 +344,7 @@ bool Urg3dNode2::sensor_init()
     }
 
     // buffer clear is needed after stop measurement
-    urg3d_low_purge(&urg_);
+    urg.lowPurge();
 
     result = 0;
     retry_count = 0;
@@ -349,7 +352,7 @@ bool Urg3dNode2::sensor_init()
 
     // ブロッキング設定初期化
     while(retry_count < RETRY_MAX_COUNT){
-        is_received = ((result = urg3d_high_blocking_init(&urg_)) >= 0);
+        is_received = ((result = urg.highBlockingInit(measurement_data_)) >= 0);
         if(is_received == true){
             break;
         }
@@ -368,7 +371,7 @@ bool Urg3dNode2::sensor_init()
 
     // ブロッキング終了処理
     while(retry_count < RETRY_MAX_COUNT){
-        is_received = ((result = urg3d_high_blocking_wait_finished_initialize(&urg_)) >= 0);
+        is_received = ((result = urg.highBlockingWaitFinishedInitialize()) >= 0);
         if(is_received == true){
             break;
         }
@@ -387,7 +390,7 @@ bool Urg3dNode2::sensor_init()
 
     // バージョン情報取得
     while(retry_count < RETRY_MAX_COUNT){
-        is_received = ((result = urg3d_high_blocking_get_sensor_version(&urg_, &version_)) >= 0);
+        is_received = ((result = urg.highBlockingGetSensorVersion(version_)) >= 0);
         if(is_received == true){
             break;
         }
@@ -407,7 +410,7 @@ bool Urg3dNode2::sensor_init()
 void Urg3dNode2::disconnect()
 {
     if(is_connected_){
-        urg3d_close(&urg_);
+        urg.close();
         is_connected_ = false;
     }
 }
@@ -444,27 +447,27 @@ void Urg3dNode2::scan_thread()
 
         // 補助データ配信
         if(publish_auxiliary_ == true){
-            int ret = urg3d_high_start_data(&urg_, URG3D_AUXILIARY);
+            int ret = urg.highStartData(URG3D_AUXILIARY);
             if(ret < 0){
                 RCLCPP_WARN(get_logger(), "Could not start Hokuyo Auxiliary\n");
             }
         }
         else{
-            int ret = urg3d_high_stop_data(&urg_, URG3D_AUXILIARY);
+            int ret = urg.highStopData(URG3D_AUXILIARY);
             if(ret < 0){
                 RCLCPP_WARN(get_logger(), "Could not stop Hokuyo Auxiliary\n");
             }
         }
 
         // 計測開始
-        urg3d_measurement_type_t type;
+        URG3D_MEASUREMENT_TYPE type;
         if(publish_intensity_ == true){
             type = URG3D_DISTANCE_INTENSITY;
         }
         else{
             type = URG3D_DISTANCE;
         }
-        int ret = urg3d_high_start_data(&urg_, type);
+        int ret = urg.highStartData(type);
         if(ret < 0){
             RCLCPP_WARN(get_logger(), "Could not start Hokuyo measurement\n");
     
@@ -492,20 +495,20 @@ void Urg3dNode2::scan_thread()
             // Inactive状態判定
             rclcpp_lifecycle::State state = get_current_state();
             if (state.label() == "inactive") {
-                urg3d_high_stop_data(&urg_, type);
+                urg.highStopData(type);
                 is_measurement_started_ = false;
                 break;
             }
             
             // 計測データ処理
-            if(urg3d_next_receive_ready(&urg_)){
+            if(urg.nextReceiveReady(ready_type, ready_status)){
                 
                 is_get_data = true;
 
                 // distance & intensity data
-                if(urg3d_high_get_measurement_data(&urg_, &measurement_data_)){                
+                if(urg.highGetMeasurementData(measurement_data_)){                
                     if(prev_frame_ == -1){
-                        prev_frame_ = measurement_data_.frame_number;
+                        prev_frame_ = measurement_data_.frameNumber;
                     }
 
                     if(prev_frame_ != -1){
@@ -520,21 +523,21 @@ void Urg3dNode2::scan_thread()
                         }
                         
                         // 条件を満たした際にpublishする
-                        if((cycle_ == CYCLE_FRAME && (prev_frame_ != measurement_data_.frame_number)) ||
-                            (cycle_ == CYCLE_FIELD && (measurement_data_.line_number == 0)) ||
+                        if((cycle_ == CYCLE_FRAME && (prev_frame_ != measurement_data_.frameNumber)) ||
+                            (cycle_ == CYCLE_FIELD && (measurement_data_.lineNumber == 0)) ||
                             (cycle_ == CYCLE_LINE)){
   
                             RCLCPP_DEBUG(get_logger(), "publish data.");
                             scan_pub_2->publish(cloud2_);
                             cloud2_.data.clear();
-                            prev_frame_ = measurement_data_.frame_number;
+                            prev_frame_ = measurement_data_.frameNumber;
                             if(scan_freq_){
                                 scan_freq_->tick();
                             }
                         }
                     }
                 }
-                else if(urg3d_high_get_auxiliary_data(&urg_, &auxiliary_data_) > 0) {
+                else if(urg.highGetAuxiliaryData(auxiliary_data_) > 0) {
                     if(create_auxiliary_message()){
                         RCLCPP_DEBUG(get_logger(), "publish auxiliary.");
                         for (int i=0; i<imu_array_cnt_; i++ ) {
@@ -549,7 +552,7 @@ void Urg3dNode2::scan_thread()
                             total_error_count_++;
                     }
                 }
-                else if(urg3d_low_get_binary(&urg_, &header_, data_, &length_data_) > 0) {
+                else if(urg.lowGetBinary(header_, data_, length_data_) > 0) {
                     // error check
                     if(strncmp(header_.type, "ERR", 3) == 0 || strncmp(header_.type , "_er", 3) == 0){
                         if(header_.status[0] != '0'){
@@ -603,7 +606,7 @@ bool Urg3dNode2::create_scan_message2(sensor_msgs::msg::PointCloud2 & msg)
 {
     rclcpp::Clock system_clock(RCL_SYSTEM_TIME);
     rclcpp::Time system_time_stamp = system_clock.now();
-    long time_stamp = measurement_data_.timestamp_ms;
+    long time_stamp = measurement_data_.timestamp;
 
     if(msg.data.size() == 0){
         // PointCloud2 メッセージ初期化
@@ -621,9 +624,9 @@ bool Urg3dNode2::create_scan_message2(sensor_msgs::msg::PointCloud2 & msg)
 
     // ポイント数を調べる
     int point_count = 0;
-    for(int spot = 0; spot < measurement_data_.spot_count; ++spot){
-        for(int echo = 0; echo < measurement_data_.spots[spot].echo_count; ++echo){
-            if(measurement_data_.spots[spot].polar[0].range_m < range_min_){
+    for(int spot = 0; spot < measurement_data_.spotCount; ++spot){
+        for(int echo = 0; echo < measurement_data_.spots[spot].echoCount; ++echo){
+            if(measurement_data_.spots[spot].polar[0].rangeM < range_min_){
                 continue;
             }
             point_count++;
@@ -636,15 +639,15 @@ bool Urg3dNode2::create_scan_message2(sensor_msgs::msg::PointCloud2 & msg)
     float* data = reinterpret_cast<float*>(&cloud2_.data[0]);
     data += cloud2_.width * cloud2_.point_step / sizeof(float);
 
-    for(int spot = 0; spot < measurement_data_.spot_count; ++spot){
-        for(int echo = 0; echo < measurement_data_.spots[spot].echo_count; ++echo){
-            if(measurement_data_.spots[spot].polar[0].range_m < range_min_){
+    for(int spot = 0; spot < measurement_data_.spotCount; ++spot){
+        for(int echo = 0; echo < measurement_data_.spots[spot].echoCount; ++echo){
+            if(measurement_data_.spots[spot].polar[0].rangeM < range_min_){
                 continue;
             }
 
-            *(data++) = measurement_data_.spots[spot].point[0].x_m;
-            *(data++) = measurement_data_.spots[spot].point[0].y_m;
-            *(data++) = measurement_data_.spots[spot].point[0].z_m;
+            *(data++) = measurement_data_.spots[spot].point[0].xm;
+            *(data++) = measurement_data_.spots[spot].point[0].ym;
+            *(data++) = measurement_data_.spots[spot].point[0].zm;
             *(data++) = measurement_data_.spots[spot].point[0].intensity;
 
             msg.width++;
@@ -660,15 +663,15 @@ bool Urg3dNode2::create_auxiliary_message(void)
 {
     rclcpp::Clock system_clock(RCL_SYSTEM_TIME);
     rclcpp::Time system_time_stamp = system_clock.now();
-    long time_stamp = measurement_data_.timestamp_ms;
+    long time_stamp = measurement_data_.timestamp;
 
-    int capturng_record_count = auxiliary_data_.record_count;
+    int capturng_record_count = auxiliary_data_.recordCount;
     if(capturng_record_count > MAXIMUM_RECORD_TIMES){
         capturng_record_count = MAXIMUM_RECORD_TIMES;
     }
 
-    urg3d_auxiliary_record_t* record = auxiliary_data_.records;
-    int rec_cnt = auxiliary_data_.record_count;
+    URG3D_AUXILIARY_RECORD_T* record = auxiliary_data_.records;
+    int rec_cnt = auxiliary_data_.recordCount;
     if ( rec_cnt > 10 ) rec_cnt = 10; // upper limit 10.
 
     for (int i=0; i<rec_cnt; i++ ) {
@@ -679,7 +682,7 @@ bool Urg3dNode2::create_auxiliary_message(void)
         }
         rclcpp::Time aux_time = system_time_stamp + system_latency_ + user_latency_;
 
-        int64_t time_nanoseconds = static_cast<int64_t>( record[i].timestamp_ms * 1e6);
+        int64_t time_nanoseconds = static_cast<int64_t>( record[i].timestampMs * 1e6);
         imu_array_[i].header.stamp  = aux_time;
         mag_array_[i].header.stamp  = aux_time;
         temp_array_[i].header.stamp = aux_time;
@@ -690,30 +693,30 @@ bool Urg3dNode2::create_auxiliary_message(void)
 
 #if MODE_LIO
         // Imu
-        imu_array_[i].angular_velocity.x = record[i].gyro_z * GYRO_FACTOR;
-        imu_array_[i].angular_velocity.y = record[i].gyro_x * GYRO_FACTOR;
-        imu_array_[i].angular_velocity.z = record[i].gyro_y * GYRO_FACTOR;
-        imu_array_[i].linear_acceleration.x = record[i].accel_z * ACCEL_FACTOR;
-        imu_array_[i].linear_acceleration.y = record[i].accel_x * ACCEL_FACTOR;
-        imu_array_[i].linear_acceleration.z = record[i].accel_y * ACCEL_FACTOR;
+        imu_array_[i].angular_velocity.x = record[i].gyroZ * GYRO_FACTOR;
+        imu_array_[i].angular_velocity.y = record[i].gyroX * GYRO_FACTOR;
+        imu_array_[i].angular_velocity.z = record[i].gyroY * GYRO_FACTOR;
+        imu_array_[i].linear_acceleration.x = record[i].accelZ * ACCEL_FACTOR;
+        imu_array_[i].linear_acceleration.y = record[i].accelX * ACCEL_FACTOR;
+        imu_array_[i].linear_acceleration.z = record[i].accelY * ACCEL_FACTOR;
 
         // Magnetic Field
-        mag_array_[i].magnetic_field.x = record[i].compass_z * COMPASS_FACTOR;
-        mag_array_[i].magnetic_field.y = record[i].compass_x * COMPASS_FACTOR;
-        mag_array_[i].magnetic_field.z = record[i].compass_y * COMPASS_FACTOR;
+        mag_array_[i].magnetic_field.x = record[i].compassZ * COMPASS_FACTOR;
+        mag_array_[i].magnetic_field.y = record[i].compassX * COMPASS_FACTOR;
+        mag_array_[i].magnetic_field.z = record[i].compassY * COMPASS_FACTOR;
 #else
         // Imuデータ
-        imu_array_[i].angular_velocity.x = record[i].gyro_x * GYRO_FACTOR;
-        imu_array_[i].angular_velocity.y = record[i].gyro_y * GYRO_FACTOR;
-        imu_array_[i].angular_velocity.z = record[i].gyro_z * GYRO_FACTOR;
-        imu_array_[i].linear_acceleration.x = record[i].accel_x * ACCEL_FACTOR;
-        imu_array_[i].linear_acceleration.y = record[i].accel_y * ACCEL_FACTOR;
-        imu_array_[i].linear_acceleration.z = record[i].accel_z * ACCEL_FACTOR;
+        imu_array_[i].angular_velocity.x = record[i].gyroX * GYRO_FACTOR;
+        imu_array_[i].angular_velocity.y = record[i].gyroY * GYRO_FACTOR;
+        imu_array_[i].angular_velocity.z = record[i].gyroZ * GYRO_FACTOR;
+        imu_array_[i].linear_acceleration.x = record[i].accelX * ACCEL_FACTOR;
+        imu_array_[i].linear_acceleration.y = record[i].accelY * ACCEL_FACTOR;
+        imu_array_[i].linear_acceleration.z = record[i].accelZ * ACCEL_FACTOR;
 
         // MagneticFieldデータ
-        mag_array_[i].magnetic_field.x = record[i].compass_z * COMPASS_FACTOR;
-        mag_array_[i].magnetic_field.y = record[i].compass_x * COMPASS_FACTOR;
-        mag_array_[i].magnetic_field.z = record[i].compass_y * COMPASS_FACTOR;
+        mag_array_[i].magnetic_field.x = record[i].compassZ * COMPASS_FACTOR;
+        mag_array_[i].magnetic_field.y = record[i].compassX * COMPASS_FACTOR;
+        mag_array_[i].magnetic_field.z = record[i].compassY * COMPASS_FACTOR;
 #endif
 
         temp_array_[i].temperature = (record[i].temperature / TEMPERATURE_FACTOR) + TEMPERATURE_OFFSET;
@@ -784,7 +787,7 @@ rclcpp::Duration Urg3dNode2::get_native_clock_offset(size_t num_measurements)
     rclcpp::Time request_time(std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count());
     // LiDARから時刻を取得
-    rclcpp::Time lidar_time( static_cast<int64_t>( measurement_data_.timestamp_ms * 1e6) );
+    rclcpp::Time lidar_time( static_cast<int64_t>( measurement_data_.timestamp * 1e6) );
     // LiDAR時刻取得後の時刻を取得
     rclcpp::Time response_time(std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count());
