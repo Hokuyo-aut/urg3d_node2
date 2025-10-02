@@ -24,11 +24,11 @@ The operation in each state of the life cycle is as follows
   end state
 
 # Supported models
-Hokuyo's VSSP 2.1-compliant LiDAR
-Tested models: `YVT-35LX-F0`, `YVT-35LX-FK`
+Hokuyo's VSSP 2.3-compliant LiDAR
+Tested models: `YVT-35LX-F0`, `YVT-35LX-F`, `YHT-05LA`, `UCT-10LCN`
+Note: Set the appropriate interlace pattern for the sensor.
 
 Tested Environment: `foxy`, `galactic`, `humble`
-
 # License
 `Apache License 2.0`
 The urg3d_library is licensed under the `Simplified BSD License`.

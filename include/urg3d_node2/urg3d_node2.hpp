@@ -33,6 +33,8 @@
 #include <limits>
 #include <csignal>
 
+#include "Urg3dSensor.h"
+
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
@@ -45,8 +47,6 @@
 #include "diagnostic_updater/diagnostic_updater.hpp"
 #include "diagnostic_updater/publisher.hpp"
 #include "diagnostic_msgs/msg/diagnostic_status.hpp"
-
-#include "urg3d_sensor.h"
 
 #define MODE_LIO (0) // Modified version for Lidar odometory.
 
@@ -288,16 +288,23 @@ private:
   /** スキャンスレッドのスレッド変数 */
   std::thread scan_thread_;
   
-  /** LiDAR管理構造体 */
-  urg3d_t urg_;
+  /** LiDAR管理クラス */
+  Urg3dSensor urg;
+  
+  /** nextReceiveReady */
+  string ready_type;
+  string ready_status;
+  
   /** LiDARヘッダ構造体 */
-  urg3d_vssp_header_t header_;
+  URG3D_VSSP_HEADER_T header_;
   /** データ格納 */
   char data_[URG3D_MAX_RX_LENGTH];
   /** 受信データ長 */
   int length_data_;
   /** LiDARバージョン構造体 */
-  urg3d_sensor_version_t version_;
+  URG3D_SENSOR_VERSION_T version_;
+  /** スペック情報構造体 */
+  URG3D_SENSOR_INFO_T info_;
   
   /** パラメータ"ip_address" : 接続先IPアドレス */
   std::string ip_address_;
@@ -349,9 +356,9 @@ private:
   double frame_per_lines_ = 35;
 
   /** 計測データ */
-  urg3d_measurement_data_t measurement_data_;
+  URG3D_MEASUREMENT_DATA_T measurement_data_;
   /** 補助データ */
-  urg3d_auxiliary_data_t auxiliary_data_;
+  URG3D_AUXILIARY_DATA_T auxiliary_data_;
   /** 前フレーム */
   int prev_frame_;
   /** 前フィールド */

@@ -33,11 +33,10 @@ set(URG_LIBRARY_SRC_DIR ${URG_LIBRARY_DIR}/src)
 include_directories(include ${URG_LIBRARY_C_INCLUDE_DIR})
 
 add_library(urg3d_c SHARED
-  ${URG_LIBRARY_SRC_DIR}/urg3d_connection.c
-  ${URG_LIBRARY_SRC_DIR}/urg3d_ring_buffer.c
-  ${URG_LIBRARY_SRC_DIR}/urg3d_sensor.c
-  ${URG_LIBRARY_SRC_DIR}/urg3d_tcpclient.c
-  ${URG_LIBRARY_SRC_DIR}/urg3d_ticks.c
+  ${URG_LIBRARY_SRC_DIR}/Urg3dConnection.cpp
+  ${URG_LIBRARY_SRC_DIR}/Urg3dRingBuffer.cpp
+  ${URG_LIBRARY_SRC_DIR}/Urg3dSensor.cpp
+  ${URG_LIBRARY_SRC_DIR}/Urg3dTcpclient.cpp
 )
 
 add_library(urg3d_node2 SHARED src/urg3d_node2.cpp)
