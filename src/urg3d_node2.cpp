@@ -539,16 +539,6 @@ void Urg3dNode2::scan_thread()
                             error_count_++;
                             total_error_count_++;
                         }
-                        
-                        std::stringstream ss;
-                        ss << "cycle_ -> " << cycle_;
-                        ss << ". prev_frame_ -> " << prev_frame_;
-                        ss << ". measurement_data_.frameNumber -> " << static_cast<int>(measurement_data_.frameNumber);
-                        ss << ". measurement_data_.lineNumber -> " << measurement_data_.lineNumber;
-                        ss << ". measurement_data_.motorFieldNumber -> " << static_cast<int>(measurement_data_.motorFieldNumber);
-                        ss << ". measurement_data_.remFieldNumber -> " << static_cast<int>(measurement_data_.remFieldNumber);
-                        RCLCPP_INFO(get_logger(), "%s", ss.str().c_str());
-                        
                         // 条件を満たした際にpublishする
                         if((cycle_ == CYCLE_FRAME && (prev_frame_ != measurement_data_.frameNumber)) ||
                             (cycle_ == CYCLE_FIELD && (measurement_data_.lineNumber == info_.spec.firstLineNumber)) ||
@@ -562,7 +552,6 @@ void Urg3dNode2::scan_thread()
                                 scan_freq_->tick();
                             }
                         }
-                        
                     }
                 }
                 else if(urg.highGetAuxiliaryData(auxiliary_data_) > 0) {
