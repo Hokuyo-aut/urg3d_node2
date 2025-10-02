@@ -25,7 +25,7 @@ LiDARとの通信には[urg3d_library](https://github.com/UrgNetwork/urg3d_libra
 
 # 対応機種
 北陽電機製のVSSP 2.3に対応した測域センサ  
-動作確認済み機種：`YVT-35LX-F0`, `YVT-35LX-F`, `YHT-05LA`, `UCT-10LCN`
+動作確認済み機種：`YVT-35LX-F0`, `YVT-35LX-F`, `YHT-05LA`, `UCT-10LCN`  
 注意) センサに合わせて適切なインターレースを設定してください。
 
 動作確認済み環境：`foxy`, `galactic`, `humble`
