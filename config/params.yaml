@@ -4,11 +4,11 @@ urg3d_node2:
     ip_port: 10940
     frame_id : 'hokuyo3d'
     range_min: 0.1
-    interlace_h: 1
+    interlace_h: 3
     interlace_v: 1
     output_cycle: 'frame'
     publish_intensity: true
-    publish_auxiliary: true
+    publish_auxiliary: false
     calibrate_time : false
     synchronize_time : false
     error_limit : 4

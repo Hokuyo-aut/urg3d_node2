@@ -321,13 +321,13 @@ bool Urg3dNode2::sensor_init()
 
     // データ通信を止める
     while(retry_count < RETRY_MAX_COUNT){
-        is_received = ((result = urg.highStopData(URG3D_DISTANCE)) >= 0);
+        is_received = ((result = urg.highBlockingStopData(URG3D_DISTANCE)) >= 0);
         if(is_received == true){
             result = 0;
-            is_received = ((result = urg.highStopData(URG3D_DISTANCE_INTENSITY)) >= 0);
+            is_received = ((result = urg.highBlockingStopData(URG3D_DISTANCE_INTENSITY)) >= 0);
             if(is_received == true){
                 result = 0;
-                is_received = ((result = urg.highStopData(URG3D_AUXILIARY)) >= 0);
+                is_received = ((result = urg.highBlockingStopData(URG3D_AUXILIARY)) >= 0);
                 if(is_received == true){
                     break;
                 }
@@ -402,7 +402,22 @@ bool Urg3dNode2::sensor_init()
 
         return false;
     }
+    
+    // センサ情報取得
+    while(retry_count < RETRY_MAX_COUNT){
+        is_received = ((result = urg.highGetSensorInfo(info_)) >= 0);
+        if(is_received == true){
+            break;
+        }
+        retry_count++;
+    }
+    if(is_received == false){
+        RCLCPP_ERROR(get_logger(), "Could not init library");
+        disconnect();
 
+        return false;
+    }
+    
     return true;
 }
 
@@ -447,13 +462,13 @@ void Urg3dNode2::scan_thread()
 
         // 補助データ配信
         if(publish_auxiliary_ == true){
-            int ret = urg.highStartData(URG3D_AUXILIARY);
+            int ret = urg.highBlockingStartData(URG3D_AUXILIARY);
             if(ret < 0){
                 RCLCPP_WARN(get_logger(), "Could not start Hokuyo Auxiliary\n");
             }
         }
         else{
-            int ret = urg.highStopData(URG3D_AUXILIARY);
+            int ret = urg.highBlockingStopData(URG3D_AUXILIARY);
             if(ret < 0){
                 RCLCPP_WARN(get_logger(), "Could not stop Hokuyo Auxiliary\n");
             }
@@ -467,7 +482,7 @@ void Urg3dNode2::scan_thread()
         else{
             type = URG3D_DISTANCE;
         }
-        int ret = urg.highStartData(type);
+        int ret = urg.highBlockingStartData(type);
         if(ret < 0){
             RCLCPP_WARN(get_logger(), "Could not start Hokuyo measurement\n");
     
@@ -495,7 +510,7 @@ void Urg3dNode2::scan_thread()
             // Inactive状態判定
             rclcpp_lifecycle::State state = get_current_state();
             if (state.label() == "inactive") {
-                urg.highStopData(type);
+                urg.highBlockingStopData(type);
                 is_measurement_started_ = false;
                 break;
             }
@@ -504,14 +519,17 @@ void Urg3dNode2::scan_thread()
             if(urg.nextReceiveReady(ready_type, ready_status)){
                 
                 is_get_data = true;
-
-                // distance & intensity data
-                if(urg.highGetMeasurementData(measurement_data_)){                
-                    if(prev_frame_ == -1){
-                        prev_frame_ = measurement_data_.frameNumber;
+                
+                if (urg.highGetMeasurementData(measurement_data_) > 0){
+                    if (prev_frame_ == -1)
+                    {
+                        if (measurement_data_.lineNumber == info_.spec.firstLineNumber && measurement_data_.motorFieldNumber == 0 && measurement_data_.remFieldNumber == 0)
+                        {
+                            prev_frame_ = measurement_data_.frameNumber;
+                        }
                     }
-
-                    if(prev_frame_ != -1){
+                    if (measurement_data_.isLineDataReady)
+                    {
                         // データ格納
                         if(create_scan_message2(cloud2_)){
                             ;
@@ -522,9 +540,18 @@ void Urg3dNode2::scan_thread()
                             total_error_count_++;
                         }
                         
+                        std::stringstream ss;
+                        ss << "cycle_ -> " << cycle_;
+                        ss << ". prev_frame_ -> " << prev_frame_;
+                        ss << ". measurement_data_.frameNumber -> " << static_cast<int>(measurement_data_.frameNumber);
+                        ss << ". measurement_data_.lineNumber -> " << measurement_data_.lineNumber;
+                        ss << ". measurement_data_.motorFieldNumber -> " << static_cast<int>(measurement_data_.motorFieldNumber);
+                        ss << ". measurement_data_.remFieldNumber -> " << static_cast<int>(measurement_data_.remFieldNumber);
+                        RCLCPP_INFO(get_logger(), "%s", ss.str().c_str());
+                        
                         // 条件を満たした際にpublishする
                         if((cycle_ == CYCLE_FRAME && (prev_frame_ != measurement_data_.frameNumber)) ||
-                            (cycle_ == CYCLE_FIELD && (measurement_data_.lineNumber == 0)) ||
+                            (cycle_ == CYCLE_FIELD && (measurement_data_.lineNumber == info_.spec.firstLineNumber)) ||
                             (cycle_ == CYCLE_LINE)){
   
                             RCLCPP_DEBUG(get_logger(), "publish data.");
@@ -535,6 +562,7 @@ void Urg3dNode2::scan_thread()
                                 scan_freq_->tick();
                             }
                         }
+                        
                     }
                 }
                 else if(urg.highGetAuxiliaryData(auxiliary_data_) > 0) {
@@ -562,8 +590,6 @@ void Urg3dNode2::scan_thread()
                 }
             }
             else{
-                rclcpp::sleep_for(10ms);
-
                 rclcpp::Time current_time = system_clock.now();
                 rclcpp::Duration period = current_time - prev_check_time;
                 if (period.seconds() >= error_check_period) {

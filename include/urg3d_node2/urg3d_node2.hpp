@@ -303,6 +303,8 @@ private:
   int length_data_;
   /** LiDARバージョン構造体 */
   URG3D_SENSOR_VERSION_T version_;
+  /** スペック情報構造体 */
+  URG3D_SENSOR_INFO_T info_;
   
   /** パラメータ"ip_address" : 接続先IPアドレス */
   std::string ip_address_;
